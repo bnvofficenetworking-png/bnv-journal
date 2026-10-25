@@ -137,28 +137,9 @@ window._fbGetDisplayName = async function(uid) {
 window._fbApi = { db: _fbDB, auth: _fbAuth, ref, get, set, remove, update, sendEmailVerification, verifyBeforeUpdateEmail, deleteUser, reload, encodeKey: _fbEncodeKey };
 
 onAuthStateChanged(_fbAuth, async function(user) {
-  if (user && typeof window.bnvAfterAuth === 'function') { await window.bnvAfterAuth(user); return; }
-  if (user) {
-    const displayName = await window._fbGetDisplayName(user.uid);
-    const username = displayName || user.email.split('@')[0];
-    window._BNVCurrentUser = username;
-    window._BNVCurrentUID  = user.uid;
-    const loginScreen = document.getElementById('login-screen');
-    if (loginScreen && !loginScreen.classList.contains('hidden')) {
-      const loadDiv = document.createElement('div');
-      loadDiv.id = 'bnv-restore-loader';
-      loadDiv.style.cssText = 'position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--txt3);letter-spacing:.1em';
-      loadDiv.textContent = '⟳ Restauration de la session…';
-      loginScreen.appendChild(loadDiv);
-    }
-    await bnvLoadUserData(username);
-    const loader = document.getElementById('bnv-restore-loader');
-    if (loader) loader.remove();
-    if (typeof enterApp === 'function') enterApp(username);
-  }
+  if (user && typeof window.bnvAfterAuth === 'function') await window.bnvAfterAuth(user);
 });
 
-console.log('[BNVAuth] ✅ Firebase Auth + RTDB v4 prête.');
 window._BNVFirebaseReady = true;
 document.dispatchEvent(new Event('bnv-firebase-ready'));
 </script>
@@ -186,7 +167,7 @@ function _bnvIsShared(key) {
 function _bnvKey(key) {
   const privateKeys = ['bnv-trades','bnv-rules','bnv-notes','bnv-config','bnv-abstentions','bnv-plan','bnv-trash','bnv-snap',
     'bnv_trades_','bnv_month_notes_','bnv_year_notes_',
-    'bnv_pref_','bnv_lang','bnv_help_requests','bnv_app_notif'];
+    'bnv_pref_'];
   const needsPrefix = privateKeys.some(p => key.startsWith(p));
   if (needsPrefix && window._BNVCurrentUser) {
     return 'u_' + window._BNVCurrentUser + '_' + key;
@@ -271,11 +252,10 @@ async function bnvLoadUserData(username) {
     'bnv_pref_autosave', 'bnv_pref_confirm_del', 'bnv_pref_col_notes',
     'bnv_pref_rr_auto', 'bnv_pref_risk_alert', 'bnv_pref_kpi_pct',
     'bnv_pref_toast', 'bnv_pref_sound', 'bnv_pref_remind',
-    'bnv_pref_theme', 'bnv_pref_devise', 'bnv_pref_timezone',
+    'bnv_pref_devise', 'bnv_pref_timezone',
     'bnv_pref_session', 'bnv_pref_sort', 'bnv_pref_journal_name',
     'bnv_pref_trader_name', 'bnv_pref_fav_assets', 'bnv_pref_reset_hour',
     'bnv_pref_max_concurrent', 'bnv_pref_max_losses', 'bnv-trash', 'bnv-snap-index', 'bnv_pref_last_backup', 'bnv_pref_backup_snooze',
-    'bnv_lang', 'bnv_current_user', 'bnv_help_requests', 'bnv_app_notif',
     'bnv_current_user'
   ];
 
@@ -308,7 +288,6 @@ async function bnvLoadUserData(username) {
   window._BNVCache['bnv_current_user'] = username;
   await bnvStorageSet('bnv_current_user', username);
 
-  console.log('[BNVStorage] ✅ Données chargées pour:', username, '—', Object.keys(window._BNVCache).length, 'clés');
 }
 
 // ── Compatibilité : remplace les appels localStorage existants ────────
@@ -316,23 +295,12 @@ async function bnvLoadUserData(username) {
 // À la place, toutes les fonctions qui appellent localStorage.X
 // utilisent désormais les wrappers _bnvCacheGet/Set/Remove ci-dessous.
 
-
-// ── COMPTE PROPRIÉTAIRE BNV ─────────────────────────────────────────
-// Le compte "Bnv" est le propriétaire du journal.
-// Il peut mettre à jour le code source sans affecter les données utilisateurs.
-// Les données de chaque utilisateur sont isolées sous leur propre préfixe.
-const BNV_OWNER = 'Bnv';
-window._BNVOwner = BNV_OWNER;
-
-// Vérifier si l'utilisateur connecté est le propriétaire
+// ── ADMINISTRATEUR (rôle attribué par le serveur : admins/<uid>) ──
 function isBNVOwner() {
   return window._BNVIsAdmin === true;
 }
 window.isBNVOwner = isBNVOwner;
 
-console.log('[BNVStorage] Propriétaire du journal: ' + BNV_OWNER);
-
-console.log('[BNVStorage] ✅ Couche de stockage persistante installée.');
 </script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -505,16 +473,6 @@ body{font-family:\'Calibri\',\'Calibri Light\',Calibri,sans-serif;font-weight:30
   transition:color .2s;
 }
 .hcb-val input:focus{color:var(--bull)}
-.meta-item{text-align:right}
-.meta-item .ml{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);margin-bottom:2px}
-.meta-item .mv{font-size:12px;font-weight:400}
-.meta-item .mv input{
-  background:transparent;border:none;color:var(--txt);
-  font-size:12px;font-weight:400;font-family:'Calibri','Calibri Light',Calibri,sans-serif;
-  width:180px;outline:none;border-bottom:1px solid var(--brd);
-  padding-bottom:2px;transition:border-color .2s;
-}
-.meta-item .mv input:focus{border-bottom-color:var(--bull)}
 
 /* ─── SIDEBAR NAVIGATION ─── */
 .app-layout{display:flex;min-height:calc(100vh - 67px)}
@@ -590,14 +548,14 @@ html[data-theme^="ff"] #user-badge-wrap{background:var(--bg2)}
 .kpi:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .kpi-label{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3);margin-bottom:6px;white-space:nowrap;font-weight:400}
 .kpi-val{font-size:22px;font-weight:400;font-family:'Calibri','Calibri Light',Calibri,sans-serif;line-height:1;letter-spacing:-.02em}
-.kpi-sub{font-size:12px;color:var(--txt3);margin-top:4px}
+
 .kpi.bull{border-color:rgba(0,119,187,.25);background:linear-gradient(135deg,var(--bg2) 60%,rgba(0,119,187,.03))}
 .kpi.bear{border-color:rgba(255,77,106,.25);background:linear-gradient(135deg,var(--bg2) 60%,rgba(255,77,106,.03))}
 .kpi.amber{border-color:rgba(245,166,35,.25);background:linear-gradient(135deg,var(--bg2) 60%,rgba(245,166,35,.03))}
 .kpi.blue{border-color:rgba(77,159,255,.25);background:linear-gradient(135deg,var(--bg2) 60%,rgba(77,159,255,.03))}
 
 /* ─── COMPTE CONFIG ─── */
-.config-section-wrapper{margin-bottom:0}
+
 .config-grid{
   display:grid;grid-template-columns:repeat(5,1fr);
   gap:10px;align-items:stretch;margin-bottom:20px;
@@ -649,7 +607,6 @@ html[data-theme^="ff"] #user-badge-wrap{background:var(--bg2)}
 .cfg-val input.inp-sm{width:52px;text-align:center}
 .cfg-result{font-family:'Calibri','Calibri Light',Calibri,sans-serif;font-weight:500;min-width:72px;text-align:right;font-size:13px;padding-right:2px}
 .cfg-sep{color:var(--txt3);font-size:12px;white-space:nowrap;padding:0 2px}
-.cfg-dollar{color:var(--txt3);font-size:12px;font-family:'Calibri','Calibri Light',Calibri,sans-serif;margin-right:2px}
 
 /* ─── GESTION DES RISQUES — Refonte Professionnelle ─── */
 .risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:20px;align-items:stretch}
@@ -708,12 +665,7 @@ html[data-theme^="ff"] #user-badge-wrap{background:var(--bg2)}
   font-family:'Calibri','Calibri Light',Calibri,sans-serif;
 }
 .form-input:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,119,187,.08)}
-.form-select{
-  background:var(--bg3);border:1px solid var(--brd);
-  color:var(--txt);font-size:13px;border-radius:var(--r);
-  padding:9px 12px;outline:none;cursor:pointer;
-  appearance:none;-webkit-appearance:none;
-}
+
 .form-input.auto{background:var(--bg4);color:var(--amber);font-family:'Calibri','Calibri Light',Calibri,sans-serif;font-weight:400}
 .form-input.pos{background:rgba(0,119,187,.07);color:var(--bull);font-family:'Calibri','Calibri Light',Calibri,sans-serif;font-weight:400}
 .form-input.neg{background:rgba(255,77,106,.07);color:var(--bear);font-family:'Calibri','Calibri Light',Calibri,sans-serif;font-weight:400}
@@ -889,33 +841,10 @@ html[data-theme^="ff"] #user-badge-wrap{background:var(--bg2)}
 }
 
 /* ─── BADGE STAT ─── */
-.stat-badge{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 8px;border-radius:5px;font-size:11px;
-  font-weight:500;letter-spacing:.03em;
-  font-family:var(--sans);
-}
-.stat-badge.up{background:var(--bull-l);color:var(--bull);border:1px solid rgba(0,119,187,.2)}
-.stat-badge.down{background:var(--bear-l);color:var(--bear);border:1px solid rgba(255,77,106,.2)}
-.stat-badge.neutral{background:var(--blue-l);color:var(--blue);border:1px solid rgba(77,159,255,.2)}
-.stat-badge.amber{background:var(--amber-l);color:var(--amber);border:1px solid rgba(245,166,35,.2)}
 
 /* ─── INLINE PROGRESS MINI ─── */
-.inline-progress{
-  display:flex;align-items:center;gap:8px;width:100%;
-}
-.inline-progress .ip-bar{
-  flex:1;height:3px;background:rgba(255,255,255,.06);
-  border-radius:2px;overflow:hidden;
-}
-.inline-progress .ip-fill{
-  height:100%;border-radius:2px;
-  transition:width .6s cubic-bezier(.4,0,.2,1);
-}
 
 /* ─── CHART BAR (Win Rate progress) ─── */
-.chart-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:8px 16px 4px}
-.chart-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.4,0,.2,1)}
 
 /* ─── KPI STRIP AMÉLIORATION ─── */
 .kpi-strip{
@@ -953,23 +882,11 @@ html[data-theme^="ff"] #user-badge-wrap{background:var(--bg2)}
   font-family:var(--sans);line-height:1;
   letter-spacing:-.02em;font-variant-numeric:tabular-nums;
 }
-.kpi-sub{font-size:11px;color:var(--txt3);margin-top:5px;font-variant-numeric:tabular-nums}
+
 .kpi.bull{border-color:rgba(0,119,187,.2);background:linear-gradient(135deg,var(--bg2) 60%,rgba(0,119,187,.025))}
 .kpi.bear{border-color:rgba(255,77,106,.2);background:linear-gradient(135deg,var(--bg2) 60%,rgba(255,77,106,.025))}
 .kpi.amber{border-color:rgba(245,166,35,.2);background:linear-gradient(135deg,var(--bg2) 60%,rgba(245,166,35,.025))}
 .kpi.blue{border-color:rgba(77,159,255,.2);background:linear-gradient(135deg,var(--bg2) 60%,rgba(77,159,255,.025))}
-
-/* ─── RÉSUMÉ MENSUEL ─── */
-.month-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.month-card{
-  background:var(--bg2);border:1px solid var(--brd);
-  border-radius:var(--r2);padding:14px 16px;text-align:center;
-  transition:border-color .2s,transform .15s;cursor:default;
-}
-.month-card:hover{transform:translateY(-2px);border-color:var(--brd2)}
-.month-name{font-size:12px;color:var(--txt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em}
-.month-pnl{font-size:20px;font-weight:400;font-family:'Calibri','Calibri Light',Calibri,sans-serif;letter-spacing:-.02em}
-.month-trades{font-size:12px;color:var(--txt3);margin-top:4px}
 
 /* ─── RÈGLES / JOURNAL NOTES ─── */
 .rules-grid{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
@@ -1049,13 +966,6 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 }
 .modal-img-wrap:hover{border-color:var(--bull)}
 .modal-img-wrap img{display:block;width:160px;height:110px;object-fit:cover}
-.modal-link-list{display:flex;flex-direction:column;gap:7px;margin-top:4px}
-.modal-link-item{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg3);border-radius:var(--r);padding:8px 12px;
-}
-.modal-link-item a{font-size:12px;color:var(--bull);text-decoration:none;word-break:break-all;flex:1}
-.modal-link-item a:hover{text-decoration:underline}
 
 /* ─── CLICKABLE CHIP IN TABLE ─── */
 .chip-btn{
@@ -1107,14 +1017,8 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 .tv-card:hover .tv-card-btn{background:rgba(77,159,255,.2)}
 
 /* ─── SOUS-ONGLETS STATS ─── */
-.stats-sub-tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:4px;margin-bottom:20px;flex-wrap:wrap}
-.stats-sub-tab{padding:7px 16px;border-radius:7px;font-size:12px;font-weight:400;cursor:pointer;color:var(--txt3);transition:all .2s;border:none;background:transparent;white-space:nowrap}
-.stats-sub-tab:hover{color:var(--txt2)}
-.stats-sub-tab.on{background:var(--bg4);color:var(--txt);border:1px solid var(--brd2);box-shadow:0 2px 8px rgba(0,0,0,.3)}
 
 /* ─── SOUS-PANELS STATS ─── */
-.stats-panel{display:none}
-.stats-panel.on{display:block}
 
 /* ─── CARDS AMÉLIORÉES — STAT-SECTION-CARD ─── */
 .stat-section-card{
@@ -1227,8 +1131,6 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 .tag-short{background:var(--bear-l);color:var(--bear);padding:2px 8px;border-radius:5px;font-size:12px;font-weight:400;border:1px solid rgba(255,77,106,.2)}
 
 /* ─── SPARKLINES ─── */
-.sparkline-wrap{display:flex;align-items:flex-end;gap:2px;height:28px}
-.spark-bar{flex:1;border-radius:1px 1px 0 0;min-height:2px}
 
 /* ─── HEATMAP ─── */
 .heatmap-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;margin-top:10px}
@@ -1238,11 +1140,8 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 .heatmap-cell:hover{transform:scale(1.2)}
 
 /* ─── YEARLY GRID ─── */
-.year-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:800px){.year-grid-2{grid-template-columns:1fr}}
 
 /* ─── TOOLTIP HEATMAP ─── */
-.hm-tooltip{position:fixed;background:var(--bg4);border:1px solid var(--brd2);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--txt);pointer-events:none;z-index:999;display:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 
 /* ─── SECTION HEADERS PREMIUM — SYSTÈME UNIFIÉ ─── */
 .section-header{
@@ -1387,8 +1286,6 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 .kpi-card2 .kv.kv-num{font-size:24px;font-variant-numeric:tabular-nums}
 
 /* ─── YEAR GRID ─── */
-.year-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:800px){.year-grid-2{grid-template-columns:1fr}}
 
 /* ─── INLINE P&L EDIT ─── */
 .inline-pnl {
@@ -1441,23 +1338,8 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 }
 
 /* ─── RÉSUMÉ RAPIDE HAUT PAGE ─── */
-.quick-stats-bar{
-  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
-  padding:10px 16px;background:var(--bg2);border:1px solid var(--brd);
-  border-radius:var(--r);margin-bottom:12px;font-size:12px;
-}
-.qs-item{display:flex;align-items:center;gap:6px;color:var(--txt2)}
-.qs-sep{color:var(--brd2);font-size:12px}
-.qs-val{font-family:'Calibri','Calibri Light',Calibri,sans-serif;font-weight:400;color:var(--txt)}
 
 /* ─── TRADE STREAK INDICATOR ─── */
-.streak-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:400;
-  font-family:'Calibri','Calibri Light',Calibri,sans-serif;
-}
-.streak-win{background:var(--bull-l);color:var(--bull);border:1px solid rgba(0,119,187,.25)}
-.streak-loss{background:var(--bear-l);color:var(--bear);border:1px solid rgba(255,77,106,.25)}
 
 /* ─── APP LAYOUT ─── */
 .app-layout{
@@ -1469,7 +1351,6 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
   min-width:0;
   overflow-x:hidden;
 }
-
 
 /* ─── HAMBURGER BUTTON ─── */
 .hamburger-btn {
@@ -1523,33 +1404,7 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
 
 /* ─── HEADER META REDESIGN ─── */
 .header-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-left: auto; }
-.meta-pill {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 8px;
-  padding: 6px 12px;
-  transition: border-color .2s;
-}
-.meta-pill:hover { border-color: rgba(255,255,255,.16); }
-.meta-pill .mp-label {
-  font-size:12px; text-transform: uppercase;
-  letter-spacing: .12em; color: var(--txt3);
-  white-space: nowrap;
-}
-.meta-pill .mp-val {
-  font-size: 12px; font-weight: 400;
-  color: var(--txt);
-  white-space: nowrap;
-}
-.meta-pill .mp-val input {
-  background: transparent; border: none;
-  color: var(--txt); font-size: 12px;
-  font-weight: 400; font-family:'Calibri','Calibri Light',Calibri,sans-serif;
-  outline: none; max-width: 160px;
-  padding: 0;
-}
-.meta-pill .mp-val input:focus { color: var(--bull); }
+
 .date-pill {
   display: flex; align-items: center; gap: 8px;
   background: rgba(245,166,35,.08);
@@ -1604,7 +1459,6 @@ textarea.note-area:focus{border-color:var(--bull);box-shadow:0 0 0 3px rgba(0,11
   color: var(--amber); font-weight: 500; letter-spacing: .1em;
 }
 .app-footer span.footer-sep { color: var(--brd2); }
-
 
 /* ─── DATE/DATETIME INPUT CALENDAR ICON WHITE ─── */
 input[type="datetime-local"]::-webkit-calendar-picker-indicator,
@@ -1767,7 +1621,7 @@ html[data-theme^="ff"] .panel-page-title{color:var(--txt)!important;font-weight:
 
 /* Cartes */
 html[data-theme^="ff"] .kpi,html[data-theme^="ff"] .config-card,html[data-theme^="ff"] .risk-card,html[data-theme^="ff"] .trade-form,
-html[data-theme^="ff"] .rule-card,html[data-theme^="ff"] .stat-section-card,html[data-theme^="ff"] .stat-card,html[data-theme^="ff"] .month-card,
+html[data-theme^="ff"] .rule-card,html[data-theme^="ff"] .stat-section-card,html[data-theme^="ff"] .stat-card,
 html[data-theme^="ff"] .bnv-verdict,html[data-theme^="ff"] .login-card,html[data-theme^="ff"] .modal,html[data-theme^="ff"] .bnv-plan-card{
   background:var(--bg2)!important;border:1px solid var(--brd)!important;border-radius:4px!important;box-shadow:var(--shadow)!important}
 html[data-theme^="ff"] .kpi::before,html[data-theme^="ff"] .kpi::after,html[data-theme^="ff"] .login-card::before{display:none!important}
@@ -1984,7 +1838,7 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
       </div>
       <div class="login-field">
         <label>Mot de passe</label>
-        <input class="login-input" id="reg-password" type="password" placeholder="Minimum 6 caractères" autocomplete="new-password"/>
+        <input class="login-input" id="reg-password" type="password" placeholder="Minimum 8 caractères" autocomplete="new-password"/>
       </div>
       <div class="login-field">
         <label>Confirmer le mot de passe</label>
@@ -2526,7 +2380,6 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
         </div>
       </div>
     </div>
-
 
   </div>
 
@@ -3407,7 +3260,6 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
   </div><!-- /sub-panel-annee -->
 </div><!-- /tab-periodes -->
 
-
 <!-- ══════════ TAB ANALYSE PAR ACTIF ══════════ -->
 <div id="tab-analyse-actif" class="panel">
 
@@ -3486,7 +3338,6 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
     </div>
   </div>
 </div>
-
 
 <!-- ══════════ TAB ANALYSE PAR TIMEFRAME ══════════ -->
 <div id="tab-analyse-tf" class="panel">
@@ -4464,7 +4315,6 @@ window.saveNotes = function() {
   <img id="img-full-src" src="" alt=""/>
 </div>
 
-
 <script>
 // ══════════════════════════════════════
 // STATE
@@ -5417,7 +5267,6 @@ function updateKPIs() {
   // Daily Summary : moyenne journalière (cohérente avec _computeAndRenderStats)
   _set('st-daily', s.dayCount>0 ? (s.dailyAvg>=0?'+':'')+fmtMoney(s.dailyAvg) : '—');
 
-  renderMonths();
   updateRiskGauges();
   if (typeof bnvUpdateProcessKPIs === 'function') bnvUpdateProcessKPIs();
 }
@@ -5551,34 +5400,6 @@ function getMonday() {
   return bnvAddDays(t, -(day===0?6:day-1));
 }
 
-function renderMonths() {
-  const byMonth = {};
-  trades.forEach(t => {
-    if (!t.date) { if(t.openDt) t.date = t.openDt.split('T')[0]; else return; }
-    const m = t.date.slice(0,7);
-    if (!byMonth[m]) byMonth[m]={pnl:0,n:0};
-    byMonth[m].pnl += t.pnl;
-    byMonth[m].n++;
-  });
-  const grid   = document.getElementById('month-grid');
-  if (!grid) return; // element removed (was in tab-stats)
-  const months = Object.keys(byMonth).sort();
-  if (months.length === 0) {
-    grid.innerHTML='<div class="month-card"><div class="month-name">Aucun trade</div><div class="month-pnl" style="color:var(--txt3)">—</div></div>';
-    return;
-  }
-  const names=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
-  grid.innerHTML=months.map(m=>{
-    const {pnl,n}=byMonth[m];
-    const [y,mo]=m.split('-');
-    return `<div class="month-card">
-      <div class="month-name">${names[parseInt(mo)-1]} ${y}</div>
-      <div class="month-pnl" style="color:${pnl>=0?'var(--bull)':'var(--bear)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
-      <div class="month-trades">${n} trade${n>1?'s':''}</div>
-    </div>`;
-  }).join('');
-}
-
 // ══════════════════════════════════════
 // DELETE + CLEAR
 // ══════════════════════════════════════
@@ -5600,32 +5421,11 @@ function clearAll() {
 // ══════════════════════════════════════
 function exportCSV() { bnvExportCSV(); }
 
-// ══════════════════════════════════════
-// EXPORT HTML (sauvegarde complète du journal)
-// ══════════════════════════════════════
-function exportHTML() {
-  const savedData = JSON.stringify(trades);
-  const currentHtml = document.documentElement.outerHTML;
-  const injectScript = `\n<script>\n(function(){try{_bnvCacheSet('bnv-trades', ${JSON.stringify(savedData)});}catch(e){}})()\ ;<\/script>`;
-  const finalHtml = currentHtml.replace('\n</body>', injectScript + '\n</body>');
-  const blob = new Blob([finalHtml], {type:'text/html;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'BNV_Journal_' + bnvToday() + '.html';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-}
-
-// ══════════════════════════════════════
 // PERSISTENCE
 // ══════════════════════════════════════
 function saveTrades() {
   const data = JSON.stringify(trades);
   _bnvCacheSet('bnv-trades', data);
-  // Aussi sauvegarder sous la clé par utilisateur
-  if (window._BNVCurrentUser) {
-    _bnvCacheSet('bnv_trades_' + window._BNVCurrentUser, data);
-  }
 }
 
 // ══════════════════════════════════════
@@ -5847,18 +5647,6 @@ function saveDashboardConfig() {
   _bnvCacheSet('bnv-config', JSON.stringify(cfg));
 }
 
-function loadDashboardConfig() {
-  const saved = _bnvCacheGet('bnv-config');
-  if (!saved) return;
-  try {
-    const cfg = JSON.parse(saved);
-    Object.keys(cfg).forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = cfg[id];
-    });
-  } catch(e) {}
-}
-
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
@@ -5928,7 +5716,6 @@ function extractAsset(asset){
 
 // Color palette for assets
 const ASSET_COLORS = ['#1D9E75','#4d9fff','#a78bfa','#f5a623','#E24B4A','#00d4aa','#ff6b6b','#ffd700','#48cae4','#e76f51'];
-function colorForKey(key, idx){ return ASSET_COLORS[idx % ASSET_COLORS.length]; }
 
 // ══════════════════════════════════════
 // HELPER — calcule + affiche les 4 cartes stats
@@ -7261,7 +7048,6 @@ function showToast(msg, type='success') {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-
 // ══════════════════════════════════════
 // SOUS-ONGLETS PÉRIODES
 // ══════════════════════════════════════
@@ -7299,7 +7085,6 @@ window.showTab = function(id, btn){
   if(id==='tab-analyse-annee')   setTimeout(initTabAnnee,50);
   if(id==='tab-analyse-tf')      setTimeout(initTabTF,50);
 };
-
 
 // ══════════════════════════════════════
 // RISK TAB SWITCHER (PR1 / PR2)
@@ -7442,7 +7227,6 @@ function updateDateDisplay(val) {
   updateDateDisplay(iso);
 })();
 
-
 // ══════════════════════════════════════
 // SYSTÈME DE CONNEXION BNV
 // ══════════════════════════════════════
@@ -7476,11 +7260,11 @@ async function doLogin() {
     err.textContent = "❌ Veuillez entrer votre adresse e-mail et votre mot de passe.";
     err.classList.add('show'); return;
   }
-  let email = emailOrName.toLowerCase();
   if (!emailOrName.includes('@')) {
-    /* Anciens comptes créés avec un pseudo seul : adresse technique déduite du pseudo */
-    email = emailOrName.toLowerCase().replace(/[^a-z0-9]/g, '') + '@bnv-trading.user';
+    err.textContent = "❌ Entrez votre adresse e-mail (la connexion par pseudo n'existe plus).";
+    err.classList.add('show'); return;
   }
+  const email = emailOrName.toLowerCase();
   const btn = document.getElementById('login-btn');
   if (btn) { btn.textContent = 'Connexion…'; btn.disabled = true; }
   try {
@@ -7542,8 +7326,7 @@ async function doRegister() {
 
 async function bnvWriteRegistration(user, pseudo, email) {
   const api = window._fbApi; if (!api) return null;
-  const key = api.encodeKey('usernames_' + pseudo);
-  const rec = { pseudo: pseudo, key: key, email: email, createdAt: new Date().toISOString() };
+  const rec = { pseudo: pseudo, email: email, createdAt: new Date().toISOString() };
   try { await api.update(api.ref(api.db, 'registrations/' + user.uid), rec); } catch (e) { console.warn('[BNV] inscription :', e.code || e); }
   return rec;
 }
@@ -7575,7 +7358,7 @@ function enterApp(username) {
   }
 
   // ── Charger les trades depuis le cache (hydraté par bnvLoadUserData) ──
-  const tradesRaw = _bnvCacheGet('bnv_trades_' + username) || _bnvCacheGet('bnv-trades');
+  const tradesRaw = _bnvCacheGet('bnv-trades') || _bnvCacheGet('bnv_trades_' + username);
   if (tradesRaw) {
     try {
       trades = JSON.parse(tradesRaw);
@@ -7653,10 +7436,6 @@ async function doForgotPassword() {
   const emailOrName = document.getElementById('login-username').value.trim();
   if (!emailOrName || !emailOrName.includes('@')) { alert("Entrez votre adresse e-mail dans le champ ci-dessus d'abord."); return; }
   let email = emailOrName.toLowerCase();
-  if (/@bnv-trading\.user$/i.test(email)) {
-    alert('Ce compte a été créé avant l\'ajout des adresses e-mail réelles : la réinitialisation par e-mail n\'est pas possible.\n\nConnectez-vous avec votre pseudo et votre mot de passe : le journal vous demandera alors d\'ajouter votre adresse e-mail. Si vous avez oublié votre mot de passe, contactez le support.');
-    return;
-  }
   try {
     await window._fbSendPasswordReset(email);
     alert('✅ E-mail de réinitialisation envoyé à : ' + email + '\nVérifiez votre boîte (et les spams).');
@@ -7667,7 +7446,6 @@ async function doForgotPassword() {
 }
 
 // Session gérée automatiquement par Firebase Auth via onAuthStateChanged (dans le module ESM ci-dessus).
-console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
 
 </script>
 </div><!-- end panels-area -->
@@ -7748,13 +7526,7 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
 }
 .modal-btn.secondary:hover { background:var(--bg4); color:var(--txt); }
 .modal-btn-row { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
-.modal-toggle-row {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 0; border-bottom:.5px solid rgba(255,255,255,.05);
-}
-.modal-toggle-row:last-child { border-bottom:none; }
-.modal-toggle-label { font-size:13px; color:var(--txt2); }
-.modal-toggle-sub { font-size:12px; color:var(--txt3); margin-top:2px; }
+
 .toggle-switch {
   width:38px; height:21px; background:var(--bg4); border-radius:11px;
   border:1px solid var(--brd); cursor:pointer; position:relative;
@@ -7767,37 +7539,6 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
 }
 .toggle-switch.on { background:rgba(0,119,187,.2); border-color:var(--bull); }
 .toggle-switch.on::after { left:18px; background:var(--bull); }
-/* langue grid */
-.lang-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.lang-item {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 14px; border-radius:10px;
-  border:1px solid var(--brd); background:var(--bg3);
-  cursor:pointer; transition:all .2s; font-size:13px; color:var(--txt2);
-}
-.lang-item:hover { border-color:var(--bull); color:var(--txt); background:rgba(0,119,187,.06); }
-.lang-item.active { border-color:var(--bull); color:var(--bull); background:rgba(0,119,187,.1); }
-.lang-flag { font-size:18px; flex-shrink:0; }
-/* plan cards */
-.plan-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.plan-card {
-  border:1px solid var(--brd); border-radius:12px; padding:16px;
-  background:var(--bg3); cursor:pointer; transition:all .2s; position:relative;
-}
-.plan-card:hover { border-color:var(--brd2); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.4); }
-.plan-card.featured { border-color:var(--amber); background:rgba(245,166,35,.05); }
-.plan-badge {
-  position:absolute; top:-10px; left:50%; transform:translateX(-50%);
-  background:linear-gradient(90deg,var(--amber),#e08c00);
-  color:#000; font-size:12px; font-weight:400; padding:3px 10px;
-  border-radius:20px; letter-spacing:.08em; white-space:nowrap;
-}
-.plan-name { font-size:14px; font-weight:500; margin-bottom:4px; }
-.plan-price { font-size:22px; font-weight:400; font-family:'Calibri','Calibri Light',Calibri,sans-serif; color:var(--amber); }
-.plan-price span { font-size:12px; color:var(--txt3); }
-.plan-features { margin-top:12px; }
-.plan-feat { font-size:12px; color:var(--txt2); padding:3px 0; display:flex; gap:6px; }
-.plan-feat::before { content:'✓'; color:var(--bull); font-weight:400; flex-shrink:0; }
 /* faq */
 .faq-item { border-bottom:.5px solid rgba(255,255,255,.06); }
 .faq-q {
@@ -7830,7 +7571,7 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
 .param-tab{flex:1;min-width:70px;padding:7px 6px;border:none;background:transparent;color:var(--txt3);font-size:11px;font-weight:400;cursor:pointer;border-radius:8px;transition:all .2s;font-family:var(--sans);text-align:center;white-space:nowrap;}
 .param-tab.on{background:var(--bg4);color:var(--txt);box-shadow:0 2px 8px rgba(0,0,0,.4);}
 .param-panel{display:none;}.param-panel.on{display:block;}
-.color-swatch-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+
 .color-swatch{width:28px;height:28px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
 .color-swatch.sel,.color-swatch:hover{border-color:#fff;transform:scale(1.15);}
 .param-range{width:100%;accent-color:var(--bull);cursor:pointer;height:4px;}
@@ -7841,10 +7582,7 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
 .pref-lbl{font-size:12px;color:var(--txt2);flex:1;}
 .pref-sub{font-size:11px;color:var(--txt3);margin-top:2px;}
 .pref-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.param-badge-preview{
-  display:inline-block;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:400;
-  background:rgba(0,119,187,.12);color:var(--bull);border:1px solid rgba(0,119,187,.25);
-}
+
 </style>
 
 <div id="modal-parametres" class="bnv-modal-overlay" onclick="if(event.target===this)closeModal('modal-parametres')">
@@ -8141,38 +7879,6 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
   </div>
 </div>
 
-<!-- ── MODAL LANGUE ── -->
-<div id="modal-langue" class="bnv-modal-overlay" onclick="if(event.target===this)closeModal('modal-langue')">
-  <div class="bnv-modal">
-    <div class="modal-header">
-      <span class="modal-header-icon">🌐</span>
-      <h3>Choisir la Langue</h3>
-      <button class="modal-close" onclick="closeModal('modal-langue')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--txt2);margin-bottom:16px;">Sélectionnez la langue d'affichage de votre journal de trading.</p>
-      <div class="lang-grid">
-        <div class="lang-item active" onclick="setLang('fr',this)"><span class="lang-flag">🇫🇷</span> Français</div>
-        <div class="lang-item" onclick="setLang('en',this)"><span class="lang-flag">🇬🇧</span> English</div>
-        <div class="lang-item" onclick="setLang('es',this)"><span class="lang-flag">🇪🇸</span> Español</div>
-        <div class="lang-item" onclick="setLang('ar',this)"><span class="lang-flag">🇸🇦</span> العربية</div>
-        <div class="lang-item" onclick="setLang('pt',this)"><span class="lang-flag">🇧🇷</span> Português</div>
-        <div class="lang-item" onclick="setLang('zh',this)"><span class="lang-flag">🇨🇳</span> 中文</div>
-        <div class="lang-item" onclick="setLang('de',this)"><span class="lang-flag">🇩🇪</span> Deutsch</div>
-        <div class="lang-item" onclick="setLang('ja',this)"><span class="lang-flag">🇯🇵</span> 日本語</div>
-        <div class="lang-item" onclick="setLang('ru',this)"><span class="lang-flag">🇷🇺</span> Русский</div>
-        <div class="lang-item" onclick="setLang('hi',this)"><span class="lang-flag">🇮🇳</span> हिन्दी</div>
-      </div>
-      <div style="margin-top:14px;padding:10px 14px;background:rgba(77,159,255,.07);border:1px solid rgba(77,159,255,.2);border-radius:10px;font-size:12px;color:var(--blue);">
-        ℹ️ La traduction complète de l'interface sera disponible dans la prochaine mise à jour. La langue française est actuellement active.
-      </div>
-      <div class="modal-btn-row">
-        <button class="modal-btn primary" onclick="closeModal('modal-langue')">✓ Confirmer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ── MODAL AIDE ── -->
 <div id="modal-aide" class="bnv-modal-overlay" onclick="if(event.target===this)closeModal('modal-aide')">
   <div class="bnv-modal">
@@ -8218,103 +7924,6 @@ console.log('[BNVAuth] Session Auth — gérée automatiquement par Firebase.');
       <div class="modal-btn-row">
         <button class="modal-btn secondary" onclick="closeModal('modal-aide')">Annuler</button>
         <button class="modal-btn primary" onclick="submitAide()">📨 Envoyer la demande</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL ABONNEMENT ── -->
-<div id="modal-abonnement" class="bnv-modal-overlay" onclick="if(event.target===this)closeModal('modal-abonnement')">
-  <div class="bnv-modal" style="max-width:620px;">
-    <div class="modal-header">
-      <span class="modal-header-icon">⊕</span>
-      <h3>Abonnement BNV Trading</h3>
-      <button class="modal-close" onclick="closeModal('modal-abonnement')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--txt2);margin-bottom:16px;">Choisissez le plan adapté à votre niveau. <strong style="color:var(--amber)">🔒 Vos données sont sécurisées</strong> — les informations clients ne sont jamais conservées après résiliation.</p>
-      <div class="plan-grid">
-        <div class="plan-card" onclick="selectPlan('free',this)">
-          <div class="plan-name">Gratuit</div>
-          <div class="plan-price">$0 <span>/ mois</span></div>
-          <div class="plan-features">
-            <div class="plan-feat">Journal de trading basique</div>
-            <div class="plan-feat">Jusqu'à 50 trades/mois</div>
-            <div class="plan-feat">Statistiques essentielles</div>
-            <div class="plan-feat" style="color:var(--txt3);">— Analyses avancées</div>
-            <div class="plan-feat" style="color:var(--txt3);">— Support prioritaire</div>
-          </div>
-        </div>
-        <div class="plan-card featured" onclick="selectPlan('pro',this)">
-          <div class="plan-badge">⭐ RECOMMANDÉ</div>
-          <div class="plan-name" style="color:var(--amber)">Pro</div>
-          <div class="plan-price">$29 <span>/ mois</span></div>
-          <div class="plan-features">
-            <div class="plan-feat">Journal illimité</div>
-            <div class="plan-feat">Trades illimités</div>
-            <div class="plan-feat">Analyses & rapports avancés</div>
-            <div class="plan-feat">Export PDF / CSV</div>
-            <div class="plan-feat">Support prioritaire 24h</div>
-          </div>
-        </div>
-      </div>
-      <hr class="modal-divider"/>
-      <div style="padding:12px 16px;background:rgba(0,119,187,.06);border:1px solid rgba(0,119,187,.2);border-radius:10px;font-size:12px;color:var(--txt2);">
-        🔒 <strong style="color:var(--bull)">Sécurité des données :</strong> Toutes les informations sont chiffrées. Les données clients sont supprimées automatiquement après résiliation. Aucune revente de données.
-      </div>
-      <div class="modal-btn-row">
-        <button class="modal-btn secondary" onclick="closeModal('modal-abonnement')">Fermer</button>
-        <button class="modal-btn primary" onclick="proceedSubscription()" id="sub-btn">⭐ Souscrire au Plan Pro</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODAL APPLICATIONS ── -->
-<div id="modal-applications" class="bnv-modal-overlay" onclick="if(event.target===this)closeModal('modal-applications')">
-  <div class="bnv-modal">
-    <div class="modal-header">
-      <span class="modal-header-icon">⬇</span>
-      <h3>Applications BNV Trading</h3>
-      <button class="modal-close" onclick="closeModal('modal-applications')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:12px;color:var(--txt2);margin-bottom:16px;">Téléchargez le journal directement sur vos appareils pour un accès hors-ligne.</p>
-      <div class="modal-info-pill" style="cursor:pointer;" onclick="showToast('Application en développement — disponible prochainement !','⬇')">
-        <span style="font-size:24px;">🖥️</span>
-        <div style="flex:1">
-          <div><strong>BNV Journal — Desktop</strong></div>
-          <div style="font-size:12px;color:var(--txt3);">Windows / macOS / Linux</div>
-        </div>
-        <span style="padding:5px 12px;background:var(--bg4);border:1px solid var(--brd2);border-radius:20px;font-size:12px;color:var(--txt3);">Bientôt</span>
-      </div>
-      <div class="modal-info-pill" style="cursor:pointer;" onclick="showToast('Application mobile en développement — disponible prochainement !','📱')">
-        <span style="font-size:24px;">📱</span>
-        <div style="flex:1">
-          <div><strong>BNV Journal — iOS</strong></div>
-          <div style="font-size:12px;color:var(--txt3);">iPhone & iPad (App Store)</div>
-        </div>
-        <span style="padding:5px 12px;background:var(--bg4);border:1px solid var(--brd2);border-radius:20px;font-size:12px;color:var(--txt3);">Bientôt</span>
-      </div>
-      <div class="modal-info-pill" style="cursor:pointer;" onclick="showToast('Application Android en développement — disponible prochainement !','📲')">
-        <span style="font-size:24px;">🤖</span>
-        <div style="flex:1">
-          <div><strong>BNV Journal — Android</strong></div>
-          <div style="font-size:12px;color:var(--txt3);">Google Play Store</div>
-        </div>
-        <span style="padding:5px 12px;background:var(--bg4);border:1px solid var(--brd2);border-radius:20px;font-size:12px;color:var(--txt3);">Bientôt</span>
-      </div>
-      <div style="margin-top:14px;padding:10px 14px;background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.25);border-radius:10px;font-size:12px;color:var(--amber);">
-        ⏳ Les applications sont en cours de développement. Inscrivez-vous pour être notifié du lancement.
-      </div>
-      <div class="modal-field" style="margin-top:14px;">
-        <label>Votre e-mail pour être notifié du lancement</label>
-        <input class="modal-input" id="app-notify-email" type="email" placeholder="votre@email.com"/>
-      </div>
-      <div id="app-notify-success" class="modal-success-msg">✅ Vous serez notifié dès que l'application sera disponible !</div>
-      <div class="modal-btn-row">
-        <button class="modal-btn secondary" onclick="closeModal('modal-applications')">Fermer</button>
-        <button class="modal-btn primary" onclick="subscribeAppNotif()">🔔 Me notifier du lancement</button>
       </div>
     </div>
   </div>
@@ -8390,11 +7999,6 @@ function openModal(id) {
   const overlay = document.getElementById('modal-' + id);
   if (overlay) overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-}
-function closeModalBNV(id) {
-  const overlay = document.getElementById('modal-' + id);
-  if (overlay) overlay.classList.remove('open');
-  document.body.style.overflow = '';
 }
 // Keyboard ESC closes modals
 document.addEventListener('keydown', function(e) {
@@ -8664,14 +8268,6 @@ function loadPrefs() {
 
 (function(){ loadPrefs(); })();
 
-// ── LANGUE ──
-function setLang(code, el) {
-  document.querySelectorAll('.lang-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-  _bnvCacheSet('bnv_lang', code);
-  showToast('Langue sélectionnée : ' + el.textContent.trim(), '🌐');
-}
-
 // ── AIDE ──
 function submitAide() {
   const nom   = document.getElementById('aide-nom').value.trim();
@@ -8684,32 +8280,6 @@ function submitAide() {
   const body = 'Nom : ' + nom + '\nE-mail : ' + email + '\nPseudo : ' + (window._BNVCurrentUser || '—') + '\n\n' + msg;
   window.location.href = 'mailto:' + encodeURIComponent(C.supportEmail) + '?subject=' + encodeURIComponent('[' + (C.brand || 'BNV') + '] ' + sujet) + '&body=' + encodeURIComponent(body);
   const suc = document.getElementById('aide-success'); if (suc) suc.classList.add('show');
-}
-
-// ── ABONNEMENT ──
-let selectedPlan = 'pro';
-function selectPlan(plan, el) {
-  selectedPlan = plan;
-  document.querySelectorAll('.plan-card').forEach(c=>c.style.outline='none');
-  el.style.outline = '2px solid var(--amber)';
-  const btn = document.getElementById('sub-btn');
-  if (btn) btn.textContent = plan === 'pro' ? '⭐ Souscrire au Plan Pro' : '✓ Continuer en Gratuit';
-}
-function proceedSubscription() {
-  if (selectedPlan === 'free') { closeModal('modal-abonnement'); showToast('Vous utilisez déjà le plan Gratuit','ℹ️'); return; }
-  showToast('Redirection vers le paiement sécurisé…','🔒');
-  setTimeout(()=>{ showToast('Paiement sécurisé — disponible prochainement','⭐'); }, 1500);
-}
-
-// ── APPLICATIONS ──
-function subscribeAppNotif() {
-  const email = document.getElementById('app-notify-email').value.trim();
-  if (!email || !email.includes('@')) { showToast('Veuillez entrer une adresse e-mail valide','❌'); return; }
-  const subs = JSON.parse(_bnvCacheGet('bnv_app_notif') || '[]');
-  if (!subs.includes(email)) { subs.push(email); _bnvCacheSet('bnv_app_notif', JSON.stringify(subs)); }
-  const suc = document.getElementById('app-notify-success');
-  if (suc) suc.classList.add('show');
-  showToast('Notification activée !','🔔');
 }
 
 // ── EN SAVOIR PLUS FAQ ──
@@ -8801,7 +8371,6 @@ document.addEventListener('keydown', function(e) {
     try { if (typeof initTabTF    === 'function') initTabTF();    } catch(e) {}
 
     // F) Grille mensuelle du Dashboard
-    try { if (typeof renderMonths === 'function') renderMonths(); } catch(e) {}
 
     // G) Badge dernier trade
     try { _updateLastTradeBadge(); } catch(e) {}
@@ -9006,8 +8575,6 @@ document.addEventListener('keydown', function(e) {
       return ret;
     };
   }
-
-  console.log('[BNV AUTO-UPDATE] ✅ Moteur de mise à jour automatique installé.');
 
 })(); // fin installAutoUpdate
 </script>
@@ -10060,7 +9627,7 @@ document.addEventListener('keydown', function(e) {
   window.bnvBackupExport = function () {
     try { if (typeof saveDashboardConfig === 'function') saveDashboardConfig(); } catch (e) {}
     var C = window._BNVCache || {}, data = {};
-    Object.keys(C).forEach(function (k) { if (/^bnv/.test(k) && !/^bnv_trades_/.test(k) && k !== 'bnv_current_user' && k !== 'bnv_help_requests') data[k] = C[k]; });
+    Object.keys(C).forEach(function (k) { if (/^bnv/.test(k) && !/^bnv_trades_/.test(k) && k !== 'bnv_current_user') data[k] = C[k]; });
     try { data['bnv-trades'] = JSON.stringify(T()); } catch (e) {}
     try { data['bnv-abstentions'] = JSON.stringify(window.bnvAbs || []); } catch (e) {}
     try { if (typeof bnvPlan === 'function') data['bnv-plan'] = JSON.stringify(bnvPlan()); } catch (e) {}
@@ -10076,7 +9643,6 @@ document.addEventListener('keydown', function(e) {
     var tr = JSON.parse(obj.data['bnv-trades']); if (!Array.isArray(tr)) throw new Error('Liste de trades invalide.');
     var user = window._BNVCurrentUser || '';
     Object.keys(obj.data).forEach(function (k) { if (/^bnv/.test(k) && !/^bnv_trades_/.test(k) && k !== 'bnv_current_user') _bnvCacheSet(k, obj.data[k]); });
-    if (user) _bnvCacheSet('bnv_trades_' + user, obj.data['bnv-trades']);
     window._bnvPlan = null;
     var name = user || ((document.getElementById('user-badge-name') || {}).textContent || '');
     if (typeof enterApp === 'function') enterApp(name);
@@ -10209,7 +9775,6 @@ document.addEventListener('keydown', function(e) {
     if (typeof showToast === 'function') showToast('Journal aligné sur le manuel BnvTrader', 'success');
   };
 
-
   /* ── Données d'exemple : 100 trades + 15 abstentions (marqués « exemple ») ── */
   window.bnvLoadExamples = function () {
     var X = window.BNV_EXEMPLES; if (!X) return;
@@ -10282,7 +9847,6 @@ document.addEventListener('keydown', function(e) {
     setInterval(refreshLimitPill, 30000);
     try { bnvApplyPrefs(); } catch (e) {}
   } catch (e) { console.warn('[BNV] init :', e); }
-  console.log('[BNV] ✅ Module de conformité au manuel installé.');
 })();
 
 </script>
@@ -10651,7 +10215,7 @@ document.addEventListener('keydown', function(e) {
   /* ── Instantanés quotidiens (cloud du trader) ── */
   function snapData() {
     var C = window._BNVCache || {}, data = {};
-    Object.keys(C).forEach(function (k) { if (/^bnv/.test(k) && !/^bnv_trades_/.test(k) && !/^bnv-snap/.test(k) && k !== 'bnv-trash' && k !== 'bnv_current_user' && k !== 'bnv_help_requests') data[k] = C[k]; });
+    Object.keys(C).forEach(function (k) { if (/^bnv/.test(k) && !/^bnv_trades_/.test(k) && !/^bnv-snap/.test(k) && k !== 'bnv-trash' && k !== 'bnv_current_user') data[k] = C[k]; });
     try { data['bnv-trades'] = JSON.stringify(T()); } catch (e) {}
     try { data['bnv-abstentions'] = JSON.stringify(window.bnvAbs || []); } catch (e) {}
     try { if (typeof bnvPlan === 'function') data['bnv-plan'] = JSON.stringify(bnvPlan()); } catch (e) {}
@@ -10773,7 +10337,6 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
   var V = function (k) { var v = C()[k]; return v ? esc(v) : '<span style="color:var(--amber)">[à compléter : ' + k + ']</span>'; };
   var API = function () { return window._fbApi; };
   var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
-  var LEGACY = /@bnv-trading\.user$/i;
 
   /* ── Écran d'attente (dans la carte de connexion) ── */
   function gateShow(html) {
@@ -10803,29 +10366,11 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
     try { await API().sendEmailVerification(u); gateMsg('✅ E-mail renvoyé à ' + u.email + '. Pensez à regarder dans les courriers indésirables.', true); }
     catch (e) { gateMsg('❌ ' + (String(e.code || '').indexOf('too-many') >= 0 ? 'Trop de demandes : réessayez dans quelques minutes.' : (e.message || e.code)), false); }
   };
-  window.bnvGateAddEmail = async function () {
-    var u = API() && API().auth.currentUser; if (!u) return;
-    var em = ($('gate-email') || {}).value || ''; em = em.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) { gateMsg('❌ Adresse e-mail invalide.', false); return; }
-    try {
-      await API().verifyBeforeUpdateEmail(u, em);
-      gateMsg('✅ Un lien de confirmation a été envoyé à ' + esc(em) + '. Ouvrez-le, puis reconnectez-vous avec cette adresse e-mail et votre mot de passe actuel.', true);
-    } catch (e) {
-      var c = String(e.code || '');
-      gateMsg('❌ ' + (c.indexOf('email-already-in-use') >= 0 ? 'Cette adresse est déjà utilisée par un autre compte.' : c.indexOf('requires-recent-login') >= 0 ? 'Déconnectez-vous puis reconnectez-vous, et recommencez.' : (e.message || c)), false);
-    }
-  };
-  window.bnvGateContinue = function () { window._bnvGateSkip = true; window.bnvGateRetry(); };
   function gateMsg(m, ok) { var e = $('gate-msg'); if (e) { e.innerHTML = m; e.className = ok ? 'login-success show' : 'login-error show'; e.style.display = 'block'; } }
   function btn(label, fn, primary) { return '<button class="login-btn' + (primary ? '' : ' gate-sec') + '" style="margin-top:8px" onclick="' + fn + '">' + label + '</button>'; }
   function gateHTML(g) {
     var u = g.user || {}, h = '';
-    if (g.screen === 'legacy') {
-      h = '<div class="login-title">Ajoutez votre adresse e-mail</div><p style="font-size:13px;color:var(--txt2);line-height:1.55;margin:0 0 12px">Votre compte a été créé avec un pseudo seul. Pour sécuriser votre journal et pouvoir réinitialiser votre mot de passe, ajoutez une adresse e-mail réelle : un lien de confirmation vous sera envoyé.</p>' +
-        '<div class="login-field"><label>Adresse e-mail</label><input class="login-input" id="gate-email" type="email" placeholder="vous@exemple.com"/></div>' +
-        btn('Envoyer le lien de confirmation', 'bnvGateAddEmail()', true) +
-        (g.rulesOld ? btn('Continuer pour l\'instant', 'bnvGateContinue()') : '') + btn('Se déconnecter', 'bnvGateLogout()');
-    } else if (g.screen === 'verify') {
+    if (g.screen === 'verify') {
       h = '<div class="login-title">Confirmez votre adresse e-mail</div><p style="font-size:13px;color:var(--txt2);line-height:1.55;margin:0 0 12px">Un lien de confirmation a été envoyé à <b>' + esc(u.email) + '</b>. Ouvrez-le (regardez aussi les courriers indésirables), puis cliquez sur « J\'ai confirmé ».</p>' +
         btn('J\'ai confirmé mon e-mail', 'bnvGateRetry()', true) + btn('Renvoyer l\'e-mail', 'bnvGateResend()') + btn('Se déconnecter', 'bnvGateLogout()');
     } else if (g.screen === 'pending') {
@@ -10849,7 +10394,7 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
     if (!rulesOld) {
       if (!reg) {
         var ps = (await displayNameOf(uid)) || email.split('@')[0];
-        reg = { pseudo: ps, key: api.encodeKey('usernames_' + ps), email: email, createdAt: new Date().toISOString() };
+        reg = { pseudo: ps, email: email, createdAt: new Date().toISOString() };
         try { await api.update(api.ref(api.db, 'registrations/' + uid), reg); } catch (e) {}
       } else if (reg.email !== email) {
         try { await api.set(api.ref(api.db, 'registrations/' + uid + '/email'), email); } catch (e) {}
@@ -10858,8 +10403,7 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
       try { var a = (await api.get(api.ref(api.db, 'approved/' + uid))).val(); status = (a && a.status) || 'pending'; } catch (e) { rulesOld = true; }
     }
     window._bnvReg = reg;
-    if (LEGACY.test(email) && !user.emailVerified && !(rulesOld && window._bnvGateSkip)) return { ok: false, screen: 'legacy', user: user, rulesOld: rulesOld };
-    if (!user.emailVerified && !LEGACY.test(email)) return { ok: false, screen: 'verify', user: user };
+    if (!user.emailVerified) return { ok: false, screen: 'verify', user: user };
     if (!rulesOld && status === 'suspended') return { ok: false, screen: 'suspended', user: user };
     if (!rulesOld && status !== 'ok') return { ok: false, screen: 'pending', user: user };
     return { ok: true, admin: admin, reg: reg };
@@ -10887,43 +10431,8 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
     var l = $('bnv-restore-loader'); if (l) l.remove();
     if (typeof enterApp === 'function') enterApp(username);
     adminTabUI();
-    setTimeout(function () { bnvRepairOnce(user, username); }, 2500);
   };
 
-  /* ── Réparation unique après le transfert de compte (administratrice seulement) ── */
-  async function bnvRepairOnce(user, username) {
-    if (window._BNVIsAdmin !== true || typeof _bnvCacheGet !== 'function') return;
-    if (_bnvCacheGet('bnv_pref_repair_2026_10')) return;
-    var api = API(), done = [];
-    try {
-      var rr = JSON.parse(_bnvCacheGet('bnv-rules') || '[]');
-      var generic = Array.isArray(rr) && rr.length && rr.every(function (s) { return String(s.id || '').indexOf('n-') === 0; });
-      var planBnv = (typeof bnvPlan === 'function') && bnvPlan().id === 'bnv';
-      if (generic && planBnv && typeof DEFAULT_RULE_SECTIONS !== 'undefined') {
-        ruleSections = JSON.parse(JSON.stringify(DEFAULT_RULE_SECTIONS));
-        _bnvCacheSet('bnv-rules', JSON.stringify(ruleSections));
-        _bnvCacheSet('bnv_pref_manual_version', '1.0');
-        if (typeof renderRules === 'function') renderRules();
-        done.push('règles BnvTrader remises');
-      }
-    } catch (e) {}
-    try {
-      var ep = String(user.email || '').split('@')[0];
-      if (ep && ep !== username) {
-        var pre = 'u_' + ep + '_', L = await window.storage.list(pre), n = 0;
-        for (var i = 0; i < ((L && L.keys) || []).length; i++) { await window.storage.delete(L.keys[i]); n++; }
-        if (n) done.push(n + ' réglages en double supprimés');
-      }
-    } catch (e) {}
-    try {
-      var regs = (await api.get(api.ref(api.db, 'registrations'))).val() || {};
-      var apr = (await api.get(api.ref(api.db, 'approved'))).val() || {}, m = 0;
-      for (var uid in apr) { if (!regs[uid] && uid !== user.uid) { await api.remove(api.ref(api.db, 'approved/' + uid)); m++; } }
-      if (m) done.push(m + ' statut orphelin retiré');
-    } catch (e) {}
-    _bnvCacheSet('bnv_pref_repair_2026_10', new Date().toISOString());
-    if (done.length && typeof showToast === 'function') showToast('Réparation terminée : ' + done.join(' · '), 'success');
-  }
   var _lo = window.doLogout;
   if (typeof _lo === 'function') window.doLogout = async function () {
     var r = await _lo.apply(this, arguments);
@@ -11002,7 +10511,6 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
       var reg = window._bnvReg || (await api.get(api.ref(api.db, 'registrations/' + u.uid))).val();
       try { await api.remove(api.ref(api.db, 'users/' + u.uid + '/data')); } catch (e) {}
       try { await api.remove(api.ref(api.db, 'users/' + u.uid + '/profile')); } catch (e) {}
-      if (reg && reg.key) { try { await api.remove(api.ref(api.db, 'shared/' + reg.key)); } catch (e) {} }
       try { await api.set(api.ref(api.db, 'registrations/' + u.uid + '/deletedAt'), new Date().toISOString()); } catch (e) {}
       try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('u_' + window._BNVCurrentUser + '_') === 0) localStorage.removeItem(k); }); } catch (e) {}
       await api.deleteUser(u);
@@ -11074,6 +10582,88 @@ window.BNV_CONFIG = window.BNV_CONFIG || {
   contactRender();
   var _om = window.openModal;
   if (typeof _om === 'function') window.openModal = function (id) { var r = _om.apply(this, arguments); if (id === 'aide' || id === 'ensavoirplus') contactRender(); return r; };
+})();
+</script>
+<style id="bnv-polish-css">
+/* ══ Finitions : mise en page, lisibilité, mobile ══ */
+:root{--hdr-h:82px}
+.main-tabs:not(.collapsed){top:var(--hdr-h)!important;max-height:calc(100vh - var(--hdr-h))!important;height:calc(100vh - var(--hdr-h))}
+.kpi-val,.risk-val,.cfg-result,.mc-cr-val,.bnv-pill,.trade-table td,.bnv-plan-table td,.bnv-measure td{font-variant-numeric:tabular-nums}
+.panel{padding:24px 28px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.main-tab:focus-visible{outline:2px solid var(--blue,#4d9fff);outline-offset:2px}
+.trade-table-wrap,.bnv-plan-wrap{scrollbar-width:thin}
+#bnv-nav-backdrop{display:none}
+.motto,.login-motto,.login-brand,.logo,h1,h2,h3,h4,label,.kl,.ks,.card-hdr-title,.panel-page-title,.hcb-label,.main-tab{text-align:left;hyphens:manual;-webkit-hyphens:manual}
+.panel-page-sub,.login-title{hyphens:manual;-webkit-hyphens:manual}
+.login-logo-icon.bnv-has-img{background:transparent!important;box-shadow:none!important;padding:0;overflow:hidden}
+.login-logo-icon.bnv-has-img img{width:100%;height:100%;object-fit:contain;display:block}
+.card-hdr .metric-filter-btn{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.35)!important;color:#fff!important;padding:3px 12px}
+.card-hdr .metric-filter-btn.on{background:#fff!important;color:#1f3b63!important;font-weight:700}
+@media (max-width:900px){
+  .header{padding:10px 14px;gap:8px}
+  .logo-block .logo-text .motto{display:none}
+  .header-meta{gap:8px;width:100%;margin-left:0}
+  .header-center-block{flex:1 1 100%;padding:6px 10px}
+  .hcb-val input{width:100%;max-width:none}
+  .panel{padding:16px 14px}
+  .app-layout{display:block}
+  .main-tabs,.main-tabs.collapsed{position:fixed!important;top:0!important;left:0;height:100vh!important;max-height:100vh!important;width:270px!important;
+    z-index:1200;opacity:1!important;padding:16px 0!important;border-right:1px solid var(--brd)!important;
+    transform:translateX(0);transition:transform .25s ease;box-shadow:0 0 40px rgba(0,0,0,.35)}
+  .main-tabs.collapsed{transform:translateX(-105%)!important;box-shadow:none}
+  #bnv-nav-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1150;opacity:0;pointer-events:none;transition:opacity .25s}
+  body.bnv-nav-open #bnv-nav-backdrop{opacity:1;pointer-events:auto}
+  #bnv-remind{left:12px;right:12px!important;bottom:12px!important;max-width:none!important}
+  .bnv-modal{max-width:calc(100vw - 24px)!important}
+}
+</style>
+<script id="bnv-polish-js">
+/* ══ Finitions : hauteur du menu, menu mobile, format des nombres ══ */
+(function () {
+  'use strict';
+  var mq = window.matchMedia('(max-width: 900px)');
+  var nav = function () { return document.querySelector('.main-tabs'); };
+  function hdr() {
+    var h = document.querySelector('.header');
+    if (h) document.documentElement.style.setProperty('--hdr-h', Math.ceil(h.getBoundingClientRect().height) + 'px');
+  }
+  var bd = document.createElement('div'); bd.id = 'bnv-nav-backdrop'; document.body.appendChild(bd);
+  function syncNav() {
+    var n = nav(); if (!n) return;
+    var open = mq.matches && !n.classList.contains('collapsed');
+    document.body.classList.toggle('bnv-nav-open', open);
+    var b = document.getElementById('hamburger-btn'); if (b) b.classList.toggle('open', open || (!mq.matches && n.classList.contains('collapsed')));
+  }
+  function closeNav() { var n = nav(); if (n && mq.matches && !n.classList.contains('collapsed')) { n.classList.add('collapsed'); syncNav(); } }
+  bd.addEventListener('click', closeNav);
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.main-tab')) setTimeout(closeNav, 60); });
+  var _ts = window.toggleSidebar;
+  if (typeof _ts === 'function') window.toggleSidebar = function () { var r = _ts.apply(this, arguments); syncNav(); return r; };
+  function applyMode() { var n = nav(); if (!n) return; if (mq.matches) n.classList.add('collapsed'); else n.classList.remove('collapsed'); syncNav(); hdr(); }
+  if (mq.addEventListener) mq.addEventListener('change', applyMode); else mq.addListener(applyMode);
+  window.addEventListener('resize', hdr);
+  applyMode();
+  setTimeout(hdr, 300);
+
+  /* Même logo sur l'écran de connexion que dans l'en-tête */
+  var li = document.querySelector('.login-logo-icon'), hi = document.querySelector('.header .logo-circle img');
+  if (li && hi) { li.textContent = ''; li.appendChild(hi.cloneNode()); li.classList.add('bnv-has-img'); }
+
+  /* Nombres affichés au format français (virgule décimale) dans les indicateurs */
+  var SEL = '.kpi-val,.risk-val,.bnv-pill,.bnv-measure td,.mc-cr-val,.kpi-card2 .kv,.kpi-card2 .ks,.data-table td';
+  var RE = /(\d)\.(\d)/g;
+  function fmt(root) {
+    (root.matches && root.matches(SEL) ? [root] : []).concat(Array.prototype.slice.call((root.querySelectorAll ? root.querySelectorAll(SEL) : []))).forEach(function (el) {
+      var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), t;
+      while ((t = w.nextNode())) { if (RE.test(t.nodeValue)) { RE.lastIndex = 0; t.nodeValue = t.nodeValue.replace(RE, '$1,$2'); } RE.lastIndex = 0; }
+    });
+  }
+  var pending = false;
+  new MutationObserver(function () {
+    if (pending) return; pending = true;
+    requestAnimationFrame(function () { pending = false; fmt(document.body); });
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  fmt(document.body);
 })();
 </script>
 </body>

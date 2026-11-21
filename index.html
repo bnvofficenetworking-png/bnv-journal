@@ -1619,7 +1619,20 @@ background:rgba(2,6,14,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:bl
 .bnv-lp-x:hover{background:rgba(127,127,127,.15);color:var(--txt)}
 .bnv-lp-x:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 #bnv-lp-card.open .bnv-lp-x{display:inline-flex}
-#bnv-lp-card .login-tabs{display:none!important}   /* Connexion seule ou Création de compte seule */
+#bnv-lp-card .login-tabs{display:none!important}
+#bnv-lp-card{align-items:flex-start}
+#bnv-lp-card .login-card{margin:auto}   /* centré, mais jamais coupé en haut sur un petit écran */
+@media (max-height:820px){
+#bnv-lp-card{padding:14px}
+#bnv-lp-card .login-card{padding:24px 30px 20px}
+#bnv-lp-card .login-logo{margin-bottom:14px}
+#bnv-lp-card .login-title{margin-bottom:12px;padding-bottom:10px}
+#bnv-lp-card .login-field{margin-bottom:10px}
+#bnv-lp-card .login-field label{margin-bottom:5px}
+#bnv-lp-card .login-input{padding:9px 13px}
+#bnv-lp-card .login-btn{padding:11px;margin-top:4px}
+#bnv-lp-card .bnv-login-copy{margin-top:10px;padding-top:10px}
+}   /* Connexion seule ou Création de compte seule */
 .bnv-lp-hero-card .login-card{margin:0}
 .bnv-lp-stats{border-top:1px solid rgba(255,255,255,.1);background:rgba(3,8,18,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-bottom:46px}
 .bnv-lp-stats-in{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding-top:22px;padding-bottom:22px;text-align:center}

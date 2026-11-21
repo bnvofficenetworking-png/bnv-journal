@@ -216,7 +216,7 @@ const keysToLoad = [
 'bnv_pref_devise', 'bnv_pref_timezone',
 'bnv_pref_session', 'bnv_pref_sort', 'bnv_pref_journal_name',
 'bnv_pref_trader_name', 'bnv_pref_fav_assets', 'bnv_pref_reset_hour',
-'bnv_pref_max_concurrent', 'bnv_pref_max_losses', 'bnv-trash', 'bnv-snap-index', 'bnv_pref_last_backup', 'bnv_pref_backup_snooze',
+'bnv_pref_max_concurrent', 'bnv_pref_max_losses', 'bnv_pref_kpi_compte', 'bnv-trash', 'bnv-snap-index', 'bnv_pref_last_backup', 'bnv_pref_backup_snooze',
 'bnv_current_user'
 ];
 const loads = keysToLoad.map(async k => {
@@ -1705,6 +1705,17 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
 </nav>
 <div class="panels-area">
 <div id="tab-dashboard" class="panel on">
+<div id="k-acct-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:12px;color:var(--txt3);">
+<span>Compte affiché</span>
+<select id="k-acct-filter" onchange="bnvSetKpiCompte(this.value)" title="Les indicateurs du Dashboard ne prennent que les trades de ce compte" style="background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:12px;padding:5px 10px;outline:none;cursor:pointer;">
+<option value="hors-bt">Réel + Démo (hors Backtest)</option>
+<option value="Réel">Réel</option>
+<option value="Démo">Démo</option>
+<option value="Backtest">Backtest</option>
+<option value="tous">Tous les comptes</option>
+</select>
+<span id="k-acct-info"></span>
+</div>
 <div class="kpi-strip" id="kpi-strip">
 <div class="kpi">
 <div class="kpi-label">Capital Total</div>
@@ -2702,6 +2713,10 @@ Analyse par Mois
 <div class="stat-row row-accent">
 <span class="sn">Score Pratique</span>
 <span class="sv" id="st-cs" style="color:var(--amber)">—</span>
+</div>
+<div class="stat-row" title="Meilleur jour gagnant du mois ÷ profit total du mois. Score pratique = 100 % − cette part.">
+<span class="sn">Meilleur jour ÷ profit</span>
+<span class="sv" id="st-cs-share">—</span>
 </div>
 <div class="stat-divider"></div>
 <div class="stat-row">
@@ -4413,6 +4428,20 @@ return avg+'m';
 * @param {Array} tList — liste de trades à analyser
 * @returns {Object} — tous les indicateurs calculés
 */
+/* ── Outils communs de calcul (ajoutés le 21/11/2026) ──
+   bnvWR        : taux de réussite = gagnants ÷ (gagnants + perdants) ; un trade à 0 $ (break-even) n'est ni l'un ni l'autre
+   bnvCloseDay  : jour d'un trade = date de CLÔTURE (sinon date saisie, sinon ouverture)
+   bnvAcctOk    : filtre « Compte affiché » du Dashboard */
+function bnvWR(list) { var w = 0, l = 0; (list || []).forEach(function (t) { var p = t.pnl || 0; if (p > 0) w++; else if (p < 0) l++; }); return (w + l) > 0 ? w / (w + l) * 100 : 0; }
+function bnvCloseDay(t) { return t.closeDt ? String(t.closeDt).split('T')[0] : (t.date || (t.openDt ? String(t.openDt).split('T')[0] : '')); }
+function bnvKpiCompte() { var v = null; try { v = _bnvCacheGet('bnv_pref_kpi_compte'); } catch (e) {} return v || 'hors-bt'; }
+function bnvAcctOk(t) { var f = bnvKpiCompte(), c = t.compte || 'Démo'; if (f === 'tous') return true; if (f === 'hors-bt') return c !== 'Backtest'; return c === f; }
+function bnvKpiTrades() { return (typeof trades !== 'undefined' && Array.isArray(trades) ? trades : []).filter(bnvAcctOk); }
+window.bnvSetKpiCompte = function (v) {
+  try { _bnvCacheSet('bnv_pref_kpi_compte', v); } catch (e) {}
+  if (typeof updateKPIs === 'function') updateKPIs();
+  if (typeof _updateHeaderKPIs === 'function') _updateHeaderKPIs();
+};
 function _calcStats(tList) {
   tList = _bnvClosed(tList).sort((a,b)=>{ const da=a.closeDt||a.openDt||'', db=b.closeDt||b.openDt||''; return da<db?-1:da>db?1:0; });   // ordre chronologique des clôtures
 const n = tList ? tList.length : 0;
@@ -4435,7 +4464,7 @@ const longs   = tList.filter(t => t.dir === 'LONG');
 const shorts  = tList.filter(t => t.dir === 'SHORT');
 const grossWin  = wins.reduce((s,t)=>s+(t.pnl||0),0);
 const grossLoss = Math.abs(losses.reduce((s,t)=>s+(t.pnl||0),0));
-const wr        = wins.length / n * 100;
+const wr        = bnvWR(tList);   // break-even exclus
 const pf        = grossLoss > 0 ? grossWin / grossLoss : wins.length > 0 ? Infinity : 0;
 const avgWin    = wins.length   > 0 ? grossWin  / wins.length   : 0;
 const avgLoss   = losses.length > 0 ? grossLoss / losses.length : 0;
@@ -4445,19 +4474,20 @@ const maxL      = losses.length > 0 ? Math.min(...losses.map(t=>t.pnl)) : 0;
 const rrReal    = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : '—';
 const lots      = tList.reduce((s,t)=>s+(t.vol||0), 0);
 const totalPnl  = tList.reduce((s,t)=>s+(t.pnl||0), 0);
-const longWR   = longs.length  > 0 ? Math.round(longs.filter(t=>(t.pnl||0)>0).length/longs.length*100)  : 0;
-const shortWR  = shorts.length > 0 ? Math.round(shorts.filter(t=>(t.pnl||0)>0).length/shorts.length*100) : 0;
+const longWR   = Math.round(bnvWR(longs));
+const shortWR  = Math.round(bnvWR(shorts));
 const longPnl  = longs.reduce((s,t)=>s+(t.pnl||0), 0);
 const shortPnl = shorts.reduce((s,t)=>s+(t.pnl||0), 0);
 const byDay = {};
-tList.forEach(t => { const d = t.date || ''; byDay[d] = (byDay[d]||0) + (t.pnl||0); });
+tList.forEach(t => { const d = bnvCloseDay(t); byDay[d] = (byDay[d]||0) + (t.pnl||0); });   // jour de clôture
 const dayVals      = Object.values(byDay);
 const bestDay      = dayVals.length > 0 ? Math.max(...dayVals) : 0;
 const worstDay     = dayVals.length > 0 ? Math.min(...dayVals) : 0;
 const dailyAbsSum  = dayVals.reduce((s,v)=>s+Math.abs(v), 0);
 const maxDailyAbs  = dailyAbsSum > 0 ? Math.max(...dayVals.map(v=>Math.abs(v))) : 0;
 const dayCount     = dayVals.length;
-const cs           = dailyAbsSum > 0 ? ((1 - maxDailyAbs / dailyAbsSum) * 100).toFixed(1) + '%' : '—';
+const bestShare    = (totalPnl > 0 && bestDay > 0) ? bestDay / totalPnl * 100 : null;   // meilleur jour gagnant ÷ profit total
+const cs           = bestShare === null ? '—' : (100 - Math.min(bestShare, 100)).toFixed(1) + '%';   // 100 % = profit bien réparti ; 80 % = meilleur jour ≤ 20 % du profit
 const dailyAvg     = dayCount > 0 ? totalPnl / dayCount : 0;
 let streakW=0, streakL=0, curW=0, curL=0;
 tList.forEach(t => {
@@ -4481,7 +4511,7 @@ wr, pf, avgWin, avgLoss, ev, maxP, maxL, rrReal,
 longs, shorts, longWR, shortWR, longPnl, shortPnl,
 totalPnl, lots,
 byDay, dayVals, bestDay, worstDay, dailyAbsSum, maxDailyAbs,
-cs, dailyAvg, dayCount,
+cs, bestShare, dailyAvg, dayCount,
 streakW, streakL,
 avgHoldMin, avgHoldStr,
 maxDD
@@ -4494,7 +4524,11 @@ const withdraw = parseFloat(document.getElementById('c-withdrawal')?.value) || 0
 const operPct  = parseFloat(document.getElementById('c-oper-pct')?.value) || 10;
 const capital  = capBase + deposit - withdraw;
 const oper     = capital * operPct / 100;
-if (!trades || trades.length === 0) {
+const _kList = bnvKpiTrades();   // filtre « Compte affiché »
+const _kSel = document.getElementById('k-acct-filter'); if (_kSel && _kSel.value !== bnvKpiCompte()) _kSel.value = bnvKpiCompte();
+const _kInfo = document.getElementById('k-acct-info');
+if (_kInfo) { const _all = (trades || []).length; _kInfo.textContent = _kList.length === _all ? _all + ' trade' + (_all > 1 ? 's' : '') : _kList.length + ' trade' + (_kList.length > 1 ? 's' : '') + ' affiché' + (_kList.length > 1 ? 's' : '') + ' sur ' + _all; }
+if (!_kList || _kList.length === 0) {
 ['k-solde','k-pnl','k-wr','k-pf','k-wins','k-losses','k-total','k-avg-p','k-max-l','k-ev'].forEach(id => {
 const el = document.getElementById(id);
 if (el) el.textContent = (id==='k-total'||id==='k-wins'||id==='k-losses') ? '0' : '—';
@@ -4504,7 +4538,9 @@ updateStats(); updateRiskGauges();
 if (typeof bnvUpdateProcessKPIs === 'function') bnvUpdateProcessKPIs();
 return;
 }
-const s = _calcStats(trades);
+const s = _calcStats(_kList);
+const _mois = (typeof bnvToday === 'function' ? bnvToday() : new Date().toISOString()).slice(0, 7);
+const sM = _calcStats(_kList.filter(t => bnvCloseDay(t).slice(0, 7) === _mois));   // consistance du MOIS en cours
 const solde = capital + s.totalPnl;
 const _kEl = id => document.getElementById(id);
 const _set = (id, val, color) => { const el=_kEl(id); if(el){el.textContent=val; if(color) el.style.color=color;} };
@@ -4525,10 +4561,10 @@ _set('k-avg-p', s.avgWin>0?'+'+fmtMoney(s.avgWin):'—');
 _set('k-max-l', s.maxL<0?fmtMoney(s.maxL):'—', s.maxL<0?'var(--bear)':'var(--txt)');
 _set('k-ev', s.ev!==0?fmtMoney(s.ev):'—', s.ev>=0?'var(--bull)':'var(--bear)');
 const csPractEl = _kEl('c-cs-pract');
-if (csPractEl) csPractEl.textContent = s.cs;
+if (csPractEl) csPractEl.textContent = sM.cs;
 const csPractBox = _kEl('c-cs-pract-box');
 if (csPractBox) {
-const csNum = parseFloat(s.cs);
+const csNum = parseFloat(sM.cs);
 csPractBox.textContent = isNaN(csNum) ? '—' : Math.round(csNum);
 const csCol = isNaN(csNum)?'var(--amber)':csNum>=80?'var(--bull)':csNum>=60?'var(--amber)':'var(--bear)';
 const csBrd = isNaN(csNum)?'rgba(245,166,35,.35)':csNum>=80?'rgba(0,119,187,.4)':csNum>=60?'rgba(245,166,35,.4)':'rgba(255,77,106,.4)';
@@ -4560,7 +4596,8 @@ _set('st-long-pnl', (s.longPnl>=0?'+':'')+fmtMoney(s.longPnl), s.longPnl>=0?'var
 _set('st-short-n',  s.shorts.length+' trades');
 _set('st-short-wr', s.shortWR+'%');
 _set('st-short-pnl',(s.shortPnl>=0?'+':'')+fmtMoney(s.shortPnl), s.shortPnl>=0?'var(--bull)':'var(--bear)');
-_set('st-cs',   s.cs);
+_set('st-cs',   sM.cs);
+_set('st-cs-share', sM.bestShare === null ? '—' : sM.bestShare.toFixed(1) + ' %');
 _set('st-lots', s.lots.toFixed(2)+' lots');
 _set('st-hold', s.avgHoldStr);
 _set('st-daily', s.dayCount>0 ? (s.dailyAvg>=0?'+':'')+fmtMoney(s.dailyAvg) : '—');
@@ -4570,7 +4607,7 @@ if (typeof bnvUpdateProcessKPIs === 'function') bnvUpdateProcessKPIs();
 function updateStats() {
 ['st-wr','st-pf','st-ev','st-avg-win','st-avg-loss','st-avg-rr','st-max-p','st-max-l',
 'st-best-day','st-worst-day','st-streak-w','st-streak-l','st-long-n','st-long-wr',
-'st-long-pnl','st-short-n','st-short-wr','st-short-pnl','st-cs','st-lots','st-hold','st-daily']
+'st-long-pnl','st-short-n','st-short-wr','st-short-pnl','st-cs','st-cs-share','st-lots','st-hold','st-daily']
 .forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
 }
 function updateRiskGauges() {
@@ -4593,7 +4630,7 @@ const ddLimit    = Math.round(oper * ddPctVal / 100);
 const today      = bnvToday();
 const monthStart = today.slice(0,7);
 const weekStart  = getMonday();
-const _tDate = t => t.closeDt ? t.closeDt.split('T')[0] : (t.date || (t.openDt ? t.openDt.split('T')[0] : ''));
+const _tDate = t => t.closeDt ? t.closeDt.split('T')[0] : (bnvCloseDay(t));
 const _live       = trades.filter(t => t.compte !== 'Backtest');   // un Backtest ne consomme pas les limites du compte
   const tradesDay   = _live.filter(t => _tDate(t) === today);
   const tradesWeek  = _live.filter(t => _tDate(t) >= weekStart);
@@ -5015,13 +5052,10 @@ if(src.length===0){ container.innerHTML='<div style="color:var(--txt3);font-size
 const assetMap = {};
 src.forEach(t=>{
 const a = t.asset||'Autre';
-if(!assetMap[a]) assetMap[a]={wins:0,total:0};
-assetMap[a].total++;
-if(t.pnl>0) assetMap[a].wins++;
+if(!assetMap[a]) assetMap[a]={wins:0,total:0,dec:0}; assetMap[a].total++; if(t.pnl>0) assetMap[a].wins++; if((t.pnl||0)!==0) assetMap[a].dec++;
 });
 const sorted = Object.entries(assetMap).sort((a,b)=>b[1].total-a[1].total).slice(0,6);
-container.innerHTML = sorted.map(([name,{wins,total}],i)=>{
-const wr = total>0?Math.round(wins/total*100):0;
+container.innerHTML = sorted.map(([name,{wins,total,dec}],i)=>{ const wr = dec>0?Math.round(wins/dec*100):0;
 const col = wr>=60?'var(--bull)':wr>=50?'var(--amber)':'var(--bear)';
 return `<div class="wr-bar-item">
 <div class="wr-bar-label"><span class="wr-bar-name">${name}</span><span style="font-family:var(--sans);font-weight:400;color:${col}">${wr}%</span></div>
@@ -5035,10 +5069,7 @@ const container = document.getElementById(containerId);
 if(!container) return;
 const src = tradeList || trades;
 const byDay={};
-src.forEach(t=>{
-const d=t.date||'';
-if(d) byDay[d]=(byDay[d]||0)+(t.pnl||0);
-});
+src.forEach(t=>{ const d=bnvCloseDay(t); if(d) byDay[d]=(byDay[d]||0)+(t.pnl||0); });
 const years=[...new Set(Object.keys(byDay).map(d=>d.slice(0,4)))].sort();
 if(years.length===0){
 container.innerHTML='<div style="color:var(--txt3);font-size:12px;padding:8px">Aucun trade daté</div>';
@@ -5118,7 +5149,7 @@ if(t) t.textContent = 'Notes & Analyse — ' + mNames[parseInt(mo)-1] + ' ' + yr
 function initTabMois(){
 const byMonth={};
 _bnvClosed(trades).forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const m=d.slice(0,7);
 if(!byMonth[m]) byMonth[m]={trades:[],pnl:0};
@@ -5154,7 +5185,7 @@ b.className = 'metric-filter-btn' + (isOn ? ' on' : '');
 }
 const byMonth={};
 _bnvClosed(trades).forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const m=d.slice(0,7);
 if(!byMonth[m]) byMonth[m]={trades:[],pnl:0};
@@ -5192,7 +5223,7 @@ if(btn) btn.classList.add('on');
 _selectedMonth=m;
 const byMonth={};
 _bnvClosed(trades).forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const mk=d.slice(0,7);
 if(!byMonth[mk]) byMonth[mk]={trades:[],pnl:0};
@@ -5209,7 +5240,7 @@ const mNames=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août'
 const mLabel=mNames[parseInt(mo)-1]+' '+yr;
 const tList=data.trades;
 const wins=tList.filter(t=>t.pnl>0);
-const wr=tList.length>0?Math.round(wins.length/tList.length*100):0;
+const wr=Math.round(bnvWR(tList));
 const assetPnl={};
 tList.forEach(t=>{ assetPnl[t.asset||'?']=(assetPnl[t.asset||'?']||0)+(t.pnl||0); });
 const bestAsset=Object.entries(assetPnl).sort((a,b)=>b[1]-a[1])[0];
@@ -5235,7 +5266,7 @@ const byDay={};
 const daysInMonth=new Date(parseInt(yr),parseInt(mo),0).getDate();
 for(let d=1;d<=daysInMonth;d++) byDay[d]=0;
 tList.forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const day=parseInt(d.split('-')[2]);
 byDay[day]=(byDay[day]||0)+(t.pnl||0);
@@ -5288,7 +5319,7 @@ const dir=t.dir==='LONG'?'<span class="tag-long">LONG</span>':'<span class="tag-
 return `<tr>
 <td>${t.asset||'—'}</td>
 <td>${dir}</td>
-<td class="mono">${(t.date||'—').slice(0,10)}</td>
+<td class="mono">${(bnvCloseDay(t)||'—').slice(0,10)}</td>
 <td style="font-size:12px;color:var(--amber)">${t.signal||'—'}</td>
 <td class="mono">${t.sl||'—'}</td>
 <td class="mono">${t.tp||'—'}</td>
@@ -5315,7 +5346,7 @@ if (_azPeriodDays === 'all') return _bnvClosed(trades);
 const days = parseInt(_azPeriodDays);
 const cutoff = bnvAddDays(bnvToday(), -days);
 return _bnvClosed(trades).filter(t => {
-const d = t.closeDt ? t.closeDt.split('T')[0] : (t.date || (t.openDt ? t.openDt.split('T')[0] : ''));
+const d = t.closeDt ? t.closeDt.split('T')[0] : (bnvCloseDay(t));
 if (!d) return false;
 return d >= cutoff;
 });
@@ -5374,7 +5405,7 @@ else if (t.pnl < 0)   assetMap[a].losses.push(t.pnl);
 });
 const assetStats = Object.entries(assetMap).map(([name, d], i) => {
 const n = d.trades.length;
-const wr = n > 0 ? Math.round(d.wins / n * 100) : 0;
+const wr = Math.round(bnvWR(d.trades));
 const avgGain = d.gains.length > 0 ? d.gains.reduce((a, b) => a + b, 0) / d.gains.length : 0;
 const avgLoss = d.losses.length > 0 ? Math.abs(d.losses.reduce((a, b) => a + b, 0) / d.losses.length) : 0;
 const grossWin = d.gains.reduce((a, b) => a + b, 0);
@@ -5554,7 +5585,7 @@ if(t) t.textContent = 'Notes & Bilan — ' + yr;
 function initTabAnnee(){
 const byMonthYear={};
 _bnvClosed(trades).forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const [y,m]=d.split('-');
 const key=y+'-'+m;
@@ -5586,7 +5617,7 @@ b.className = 'metric-filter-btn' + (isOn ? ' on' : '');
 }
 const byMonthYear={};
 _bnvClosed(trades).forEach(t=>{
-const d=t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d=bnvCloseDay(t);
 if(!d) return;
 const [y,m]=d.split('-');
 const key=y+'-'+m;
@@ -5705,7 +5736,7 @@ const rows=Array.from({length:12},(_,m)=>{
 const k=yr+'-'+String(m+1).padStart(2,'0');
 if(!byMonthYear[k]) return null;
 const {pnl,trades:tl,wins}=byMonthYear[k];
-const wr=tl.length>0?Math.round(wins/tl.length*100):0;
+const wr=Math.round(bnvWR(tl));
 const col=pnl>=0?'color:var(--bull)':'color:var(--bear)';
 const wrCol=wr>=60?'var(--bull)':wr>=50?'var(--amber)':'var(--bear)';
 const badge=pnl>=0
@@ -5737,7 +5768,7 @@ const DOW_ORDER = [1,2,3,4,5,6,0];
 const byDay = {};
 DOW_ORDER.forEach(dow => { byDay[dow] = {pnl:0, trades:[], wins:0}; });
 _bnvClosed(trades).forEach(t => {
-const d = t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d = bnvCloseDay(t);
 if(!d) return;
 const dow = new Date(d+'T12:00:00').getDay();
 byDay[dow].pnl += (t.pnl||0);
@@ -5752,7 +5783,7 @@ if(!el) return;
 if(d.trades.length === 0){ el.textContent='—'; el.style.color='var(--txt3)'; if(sub) sub.textContent='0 trade'; return; }
 el.textContent = (d.pnl>=0?'+':'')+'$'+d.pnl.toFixed(2);
 el.style.color = d.pnl>=0?'var(--bull)':'var(--bear)';
-const wr = Math.round(d.wins/d.trades.length*100);
+const wr = Math.round(bnvWR(d.trades));
 if(sub) sub.textContent = d.trades.length+' trades · '+wr+'% WR';
 });
 _destroyChart('dayPnl');
@@ -5780,7 +5811,7 @@ y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:12},c
 _destroyChart('dayWr');
 const ctx2 = document.getElementById('dayWrChart');
 if(ctx2){
-const wrVals = DOW_ORDER.map(d=>byDay[d].trades.length>0?Math.round(byDay[d].wins/byDay[d].trades.length*100):null);
+const wrVals = DOW_ORDER.map(d=>byDay[d].trades.length>0?Math.round(bnvWR(byDay[d].trades)):null);
 _charts['dayWr'] = new Chart(ctx2.getContext('2d'),{
 type:'bar',
 data:{
@@ -5805,7 +5836,7 @@ tbody.innerHTML = DOW_ORDER.map((dow,i)=>{
 const d = byDay[dow];
 if(d.trades.length===0) return `<tr><td>${DAY_NAMES[i]}</td><td class="center" colspan="7" style="color:var(--txt3)">Aucun trade</td></tr>`;
 const losses = d.trades.filter(t=>(t.pnl||0)<0).length;
-const wr = Math.round(d.wins/d.trades.length*100);
+const wr = Math.round(bnvWR(d.trades));
 const gains = d.trades.filter(t=>t.pnl>0).map(t=>t.pnl);
 const pertes = d.trades.filter(t=>t.pnl<0).map(t=>t.pnl);
 const avgGain = gains.length>0?(gains.reduce((a,b)=>a+b,0)/gains.length).toFixed(2):0;
@@ -5838,7 +5869,7 @@ function initTabSemaine(){
 const byWeek = {};
 const mNames = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
 _bnvClosed(trades).forEach(t => {
-const d = t.date||(t.openDt?t.openDt.split('T')[0]:'');
+const d = bnvCloseDay(t);
 if(!d) return;
 const {year, week} = getISOWeek(d);
 const month = d.slice(0,7);
@@ -5905,7 +5936,7 @@ const monthWeeks = byMonth[m].sort();
 const rows = monthWeeks.map(k=>{
 const w = byWeek[k];
 const losses = w.trades.filter(t=>(t.pnl||0)<0).length;
-const wr = w.trades.length>0?Math.round(w.wins/w.trades.length*100):0;
+const wr = Math.round(bnvWR(w.trades));
 const wrCol = wr>=60?'var(--bull)':wr>=50?'var(--amber)':'var(--bear)';
 const pClass = w.pnl>=0?'color:var(--bull)':'color:var(--bear)';
 const badge = w.pnl>=0
@@ -5953,7 +5984,7 @@ else if(t.pnl<0) tfMap[tf].losses.push(t.pnl);
 });
 const tfStats=Object.entries(tfMap).map(([name,d],i)=>{
 const n=d.trades.length;
-const wr=n>0?Math.round(d.wins/n*100):0;
+const wr = Math.round(bnvWR(d.trades));
 const avgGain=d.gains.length>0?d.gains.reduce((a,b)=>a+b,0)/d.gains.length:0;
 const avgLoss=d.losses.length>0?Math.abs(d.losses.reduce((a,b)=>a+b,0)/d.losses.length):0;
 const grossWin=d.gains.reduce((a,b)=>a+b,0);
@@ -6836,7 +6867,7 @@ Le <strong style="color:var(--txt)">BNV Journal de Trading</strong> est un outil
 </div>
 <div class="faq-item">
 <div class="faq-q" onclick="toggleFaq(this)">Comment calculer mon Consistency Score ? <span>+</span></div>
-<div class="faq-a">Le Consistency Score Pratique est calculé automatiquement à partir de vos trades. Il compare la régularité de vos résultats avec votre objectif de Consistency Théorique défini dans la configuration.</div>
+<div class="faq-a">Score Pratique = 100 % − (meilleur jour gagnant du mois ÷ profit total du mois). Exemple : profit du mois 1 000 $, meilleur jour 250 $ → 25 % → score 75 %. Avec un objectif de 80 %, aucun jour ne doit dépasser 20 % du profit. Pas de score tant que le mois n'est pas en profit. Les jours sont comptés à la date de clôture.</div>
 </div>
 <div class="faq-item">
 <div class="faq-q" onclick="toggleFaq(this)">Comment exporter mes trades ? <span>+</span></div>
@@ -7141,18 +7172,18 @@ if (typeof saveTrades === 'function' && !opts.skipSave) saveTrades();
 }
 };
 function _updateHeaderKPIs() {
-if (!window.trades || trades.length === 0) {
+if (typeof trades === 'undefined' || bnvKpiTrades().length === 0) {
 _setEl('h-kpi-pnl',     '$0.00');
 _setEl('h-kpi-wr',      '—');
 _setEl('h-kpi-trades',  '0');
 _setEl('h-kpi-solde',   '—');
 return;
 }
-const _cl      = _bnvClosed(trades);
-const n        = _cl.length || 1;
+const _cl      = _bnvClosed(bnvKpiTrades());
+const n        = _cl.length;
 const totalPnl = _cl.reduce((s,t) => s + (t.pnl||0), 0);
 const wins     = _cl.filter(t => t.pnl > 0).length;
-const wr       = (wins / n * 100).toFixed(1);
+const wr       = bnvWR(_cl).toFixed(1);
 const capital  = parseFloat(document.getElementById('c-capital')?.value) || 10000;
 const deposit  = parseFloat(document.getElementById('c-deposit')?.value) || 0;
 const withdraw = parseFloat(document.getElementById('c-withdrawal')?.value) || 0;
@@ -7174,7 +7205,8 @@ soldeEl.style.color = solde >= capital ? 'var(--bull)' : 'var(--bear)';
 function _updateLastTradeBadge() {
 const el = document.getElementById('h-last-trade');
 if (!el) return;
-if (!window.trades || trades.length === 0) { el.textContent = '—'; return; }
+if (typeof trades === 'undefined' || trades.length === 0) {
+el.textContent = '—'; return; }
 const last = trades[trades.length - 1];
 const pnl  = last.pnl || 0;
 const sign = pnl >= 0 ? '+' : '';
@@ -8218,12 +8250,12 @@ var n = list.length, w = list.filter(function (t) { return (t.pnl || 0) > 0; }).
 var Rs = list.map(bnvROf), tot = Rs.reduce(function (a, b) { return a + b; }, 0);
 var net = list.reduce(function (s, t) { return s + (t.pnl || 0); }, 0);
 var cs = list.filter(function (t) { return t.conforme; }), co = cs.filter(function (t) { return t.conforme === 'Oui'; }).length;
-return { n: n, wr: n ? w / n * 100 : 0, exp: n ? tot / n : 0, tot: tot, net: net, conf: cs.length ? co / cs.length * 100 : null };
+return { n: n, wr: bnvWR(list), exp: n ? tot / n : 0, tot: tot, net: net, conf: cs.length ? co / cs.length * 100 : null };
 }
 window.bnvUpdateProcessKPIs = function () {
 try {
 refreshLimitPill();
-var all = T().filter(isTrade);
+var all = T().filter(isTrade).filter(function (t) { return typeof bnvAcctOk !== 'function' || bnvAcctOk(t); });   // filtre « Compte affiché »
 var ck_ = function (t) { return t.closeDt || t.openDt || ''; };
 var closed = all.filter(isClosed).sort(function (a, b) { return ck_(a) < ck_(b) ? -1 : ck_(a) > ck_(b) ? 1 : 0; });   // ordre chronologique exact des clôtures
 var S = seg(closed);

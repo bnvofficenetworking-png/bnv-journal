@@ -1527,6 +1527,66 @@ html[data-theme="ff-light"] .rule-card h4 input{background:transparent!important
 html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transition:none!important;animation:none!important}
 #trade-table.bnv-hide-notes th:nth-child(18),#trade-table.bnv-hide-notes tbody td:nth-child(18){display:none}</style>
 <script>function _bnvClosed(l){return (l||[]).filter(function(t){return (t.pnl||0)!==0||!!t.closeDt;});}(function(){var m="ff-light";try{m=localStorage.getItem("bnv_ff_theme")||"ff-light";}catch(e){}if(m!=="classic")document.documentElement.setAttribute("data-theme",m);})();function bnvTZ(){try{if(typeof _bnvCacheGet==="function"){var v=_bnvCacheGet("bnv_pref_timezone");if(v)return v;}}catch(e){}try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";}catch(e){return "UTC";}}function bnvParts(d,tz){d=d||new Date();try{var o={};new Intl.DateTimeFormat("en-US",{timeZone:tz||bnvTZ(),hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short"}).formatToParts(d).forEach(function(x){o[x.type]=x.value;});return {y:+o.year,mo:+o.month,d:+o.day,h:(+o.hour)%24,mi:+o.minute,wd:o.weekday};}catch(e){return {y:d.getFullYear(),mo:d.getMonth()+1,d:d.getDate(),h:d.getHours(),mi:d.getMinutes(),wd:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]};}}function bnvLocalISO(d){var q=bnvParts(d),p=function(n){return String(n).padStart(2,"0");};return q.y+"-"+p(q.mo)+"-"+p(q.d)+"T"+p(q.h)+":"+p(q.mi);}function bnvToday(){return bnvLocalISO().slice(0,10);}function bnvWallToDate(s){var m=String(s||"").match(/(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);if(!m)return new Date(s);var w=Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)),g=w;for(var i=0;i<3;i++){var q=bnvParts(new Date(g));g=w-(Date.UTC(q.y,q.mo-1,q.d,q.h,q.mi)-g);}return new Date(g);}function bnvAddDays(iso,n){var a=String(iso).split("-").map(Number),u=new Date(Date.UTC(a[0],a[1]-1,a[2]+n));return u.toISOString().slice(0,10);}</script>
+<style id="bnv-cover-css">
+/* ══ Couverture (écran de connexion) : présentation à gauche, carte de connexion à droite — style seulement ══ */
+#login-screen{display:flex;align-items:center;justify-content:center;gap:56px;padding:92px 48px 48px;overflow-y:auto}
+#login-screen::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(900px 520px at 12% 8%,rgba(77,159,255,.10),transparent 60%),radial-gradient(700px 480px at 92% 92%,rgba(0,119,187,.10),transparent 60%);}
+#login-screen::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;
+-webkit-mask-image:radial-gradient(ellipse at 40% 40%,#000 0%,transparent 75%);mask-image:radial-gradient(ellipse at 40% 40%,#000 0%,transparent 75%);}
+#login-screen{align-items:flex-start}
+#login-screen>*{position:relative;z-index:1;margin-top:auto;margin-bottom:auto}   /* centré sans jamais passer sous la barre du haut */
+#login-screen .login-card{flex:0 0 auto}
+.bnv-cv-top{position:fixed!important;top:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;
+z-index:2!important;background:rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--brd)}
+.bnv-cv-brand{display:flex;align-items:center;gap:12px;color:var(--txt);font-size:15px;letter-spacing:.04em}
+.bnv-cv-brand b{font-weight:500}
+.bnv-cv-brand small{display:block;font-size:11px;letter-spacing:.2em;color:var(--txt2);text-transform:uppercase}
+.bnv-cv-logo{width:38px;height:38px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+background:linear-gradient(135deg,var(--bull),var(--blue));color:#fff;font-size:12px;font-weight:500;flex-shrink:0}
+.bnv-cv-logo img{width:100%;height:100%;object-fit:contain;display:block}
+.bnv-cv-logo.bnv-has-img{background:transparent}
+.bnv-cv-nav{display:flex;align-items:center;gap:10px}
+.bnv-cv-nav button{font-family:inherit;font-size:13px;cursor:pointer;border-radius:9px;padding:8px 16px;transition:all .15s}
+.bnv-cv-ghost{background:transparent;color:var(--txt);border:1px solid var(--brd2)}
+.bnv-cv-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.bnv-cv-solid{background:var(--bull);color:#fff;border:1px solid transparent}
+.bnv-cv-solid:hover{filter:brightness(1.12)}
+.bnv-cv-hero{flex:1 1 auto;max-width:600px;color:var(--txt);animation:bnvCvIn .5s ease-out}
+@keyframes bnvCvIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.bnv-cv-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);
+border:1px solid rgba(77,159,255,.35);background:rgba(77,159,255,.08);border-radius:999px;padding:6px 14px}
+.bnv-cv-badge i{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px rgba(77,159,255,.18);font-style:normal}
+.bnv-cv-hero h1{font-size:44px;line-height:1.12;font-weight:500;margin:20px 0 16px;letter-spacing:-.01em}
+.bnv-cv-hero h1 span{background:linear-gradient(90deg,var(--bull),var(--blue));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.bnv-cv-lead{font-size:16px;line-height:1.6;color:var(--txt2);max-width:540px}
+.bnv-cv-feats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0}
+.bnv-cv-feat{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--brd);border-radius:12px;background:rgba(255,255,255,.02)}
+.bnv-cv-feat svg{flex-shrink:0;width:22px;height:22px;stroke:var(--blue);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bnv-cv-feat b{display:block;font-size:14px;font-weight:500;color:var(--txt);margin-bottom:3px}
+.bnv-cv-feat span{font-size:12.5px;line-height:1.45;color:var(--txt2)}
+.bnv-cv-prev{border:1px solid var(--brd2);border-radius:14px;background:var(--bg2);padding:16px 18px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.bnv-cv-prev-h{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--txt2);margin-bottom:12px}
+.bnv-cv-dots i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--brd2);font-style:normal}
+.bnv-cv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.bnv-cv-kpi{border:1px solid var(--brd);border-radius:10px;padding:9px 10px}
+.bnv-cv-kpi small{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt2)}
+.bnv-cv-kpi b{display:block;font-size:16px;font-weight:500;margin-top:3px;color:var(--txt)}
+.bnv-cv-kpi b.up{color:var(--bull)}
+.bnv-cv-chart{width:100%;height:84px;display:block}
+.bnv-cv-note{font-size:11px;color:var(--txt3);margin-top:8px}
+.bnv-cv-trust{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;font-size:12.5px;color:var(--txt2)}
+.bnv-cv-trust span{display:inline-flex;align-items:center;gap:7px}
+.bnv-cv-trust svg{width:15px;height:15px;stroke:var(--bull);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:1100px){.bnv-cv-hero h1{font-size:36px}.bnv-cv-feats{grid-template-columns:1fr}#login-screen{gap:36px;padding:88px 28px 36px}}
+@media (max-width:900px){.bnv-cv-hero{display:none}#login-screen{padding:84px 16px 32px}.bnv-cv-top{padding:0 16px}.bnv-cv-brand small{display:none}}
+@media (max-width:480px){.bnv-cv-nav .bnv-cv-ghost{display:none}}
+@media (max-height:800px) and (min-width:901px){.bnv-cv-prev{display:none}.bnv-cv-hero h1{font-size:38px;margin:16px 0 12px}.bnv-cv-feats{margin:22px 0}}
+html[data-theme="ff-light"] .bnv-cv-top{background:rgba(255,255,255,.7)}
+html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
+html[data-theme="ff-light"] #login-screen::after{opacity:.6;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px)}
+</style>
 </head>
 <body>
 <span id="h-kpi-pnl" style="display:none"></span>
@@ -1535,6 +1595,40 @@ html.bnv-no-anim *,html.bnv-no-anim *::before,html.bnv-no-anim *::after{transiti
 <span id="h-kpi-solde" style="display:none"></span>
 <span id="h-last-trade" style="display:none"></span>
 <div id="login-screen">
+<div class="bnv-cv-top" aria-label="Barre de navigation">
+<div class="bnv-cv-brand"><div class="bnv-cv-logo" id="bnv-cv-logo">BNV</div><div><b>BNV Trading</b><small>Journal officiel</small></div></div>
+<div class="bnv-cv-nav">
+<button type="button" class="bnv-cv-ghost" onclick="switchLoginTab('login');var e=document.getElementById('login-username');if(e)e.focus();">Connexion</button>
+<button type="button" class="bnv-cv-solid" onclick="switchLoginTab('register');var e=document.getElementById('reg-username');if(e)e.focus();">Créer un compte</button>
+</div>
+</div>
+<section class="bnv-cv-hero" aria-label="Présentation">
+<div class="bnv-cv-badge"><i></i>Journal de trading professionnel</div>
+<h1>Tradez avec un plan.<br/><span>Mesurez chaque décision.</span></h1>
+<p class="bnv-cv-lead">Journal, gestion du risque et analyses réunis au même endroit. Vos limites de perte, votre risque par trade et vos statistiques se recalculent automatiquement à chaque trade.</p>
+<div class="bnv-cv-feats">
+<div class="bnv-cv-feat"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div><b>Dashboard en temps réel</b><span>Solde, P&amp;L, taux de réussite, espérance, drawdown, par compte.</span></div></div>
+<div class="bnv-cv-feat"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><div><b>Gestion du risque</b><span>Limites de perte LP1 / LP2 et paramètres PR1 / PR2 surveillés en direct.</span></div></div>
+<div class="bnv-cv-feat"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h8"/></svg><div><b>Calculateur de position</b><span>Contrats Futures et lots CFD selon votre R1 et votre stop.</span></div></div>
+<div class="bnv-cv-feat"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><div><b>Analyses détaillées</b><span>Par période, par actif, par timeframe, par jour de la semaine.</span></div></div>
+</div>
+<div class="bnv-cv-prev" aria-hidden="true">
+<div class="bnv-cv-prev-h"><span class="bnv-cv-dots"><i></i><i></i><i></i></span><span>Aperçu du Dashboard</span></div>
+<div class="bnv-cv-kpis">
+<div class="bnv-cv-kpi"><small>Solde</small><b>100 488 $</b></div>
+<div class="bnv-cv-kpi"><small>P&amp;L net</small><b class="up">+488 $</b></div>
+<div class="bnv-cv-kpi"><small>Réussite</small><b>35,7 %</b></div>
+<div class="bnv-cv-kpi"><small>Facteur de profit</small><b>1,51</b></div>
+</div>
+<svg class="bnv-cv-chart" viewBox="0 0 400 84" preserveAspectRatio="none"><defs><linearGradient id="bnvCvG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4D9FFF" stop-opacity=".35"/><stop offset="1" stop-color="#4D9FFF" stop-opacity="0"/></linearGradient></defs><path d="M0 70 L30 64 L60 67 L90 55 L120 58 L150 46 L180 50 L210 38 L240 42 L270 30 L300 34 L330 22 L360 26 L400 12 L400 84 L0 84 Z" fill="url(#bnvCvG)"/><path d="M0 70 L30 64 L60 67 L90 55 L120 58 L150 46 L180 50 L210 38 L240 42 L270 30 L300 34 L330 22 L360 26 L400 12" fill="none" stroke="#4D9FFF" stroke-width="2"/></svg>
+<div class="bnv-cv-note">Illustration : chiffres des trades d'exemple fournis avec le journal.</div>
+</div>
+<div class="bnv-cv-trust">
+<span><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Connexion sécurisée</span>
+<span><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0114-5M20 12a8 8 0 01-14 5"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>Synchronisé sur tous vos appareils</span>
+<span><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>Calculs vérifiés</span>
+</div>
+</section>
 <div class="login-card">
 <div class="login-logo">
 <div class="login-logo-icon">BNV</div>
@@ -9340,5 +9434,6 @@ fmt(document.body);
 })();</script>
 <script id="bnv-mc-sync">/* Calculateur toujours synchronisé : recalcAll est déclarée après le calculateur, on l'enveloppe ici, une fois tout chargé */
 (function(){var o=window.recalcAll;if(typeof o!=='function'||o._mcSync)return;var w=function(){try{return o.apply(this,arguments);}finally{try{if(window.mcSync)window.mcSync();}catch(e){console.warn('[BNV] mcSync :',e);}}};/* synchronise même si recalcAll échoue */w._mcSync=true;window.recalcAll=w;try{if(window.mcSync)window.mcSync();}catch(e){}})();</script>
+<script id="bnv-cover-js">(function(){try{var hi=document.querySelector('.header .logo-circle img'),cl=document.getElementById('bnv-cv-logo');if(hi&&cl){cl.textContent='';cl.appendChild(hi.cloneNode());cl.classList.add('bnv-has-img');}}catch(e){}})();</script>
 </body>
 </html>

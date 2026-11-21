@@ -4452,7 +4452,7 @@ maxP:0, maxL:0, rrReal:'—',
 longs:[], shorts:[], longWR:0, shortWR:0, longPnl:0, shortPnl:0,
 totalPnl:0, lots:0,
 byDay:{}, dayVals:[], bestDay:0, worstDay:0,
-dailyAbsSum:0, maxDailyAbs:0, cs:'—', dailyAvg:0,
+dailyAbsSum:0, maxDailyAbs:0, cs:'—', bestShare:null, dailyAvg:0,
 streakW:0, streakL:0,
 avgHoldMin:0, avgHoldStr:'—',
 maxDD:0
@@ -4597,7 +4597,7 @@ _set('st-short-n',  s.shorts.length+' trades');
 _set('st-short-wr', s.shortWR+'%');
 _set('st-short-pnl',(s.shortPnl>=0?'+':'')+fmtMoney(s.shortPnl), s.shortPnl>=0?'var(--bull)':'var(--bear)');
 _set('st-cs',   sM.cs);
-_set('st-cs-share', sM.bestShare === null ? '—' : sM.bestShare.toFixed(1) + ' %');
+_set('st-cs-share', (sM.bestShare == null) ? '—' : sM.bestShare.toFixed(1) + ' %');
 _set('st-lots', s.lots.toFixed(2)+' lots');
 _set('st-hold', s.avgHoldStr);
 _set('st-daily', s.dayCount>0 ? (s.dailyAvg>=0?'+':'')+fmtMoney(s.dailyAvg) : '—');
@@ -9339,6 +9339,6 @@ requestAnimationFrame(function () { pending = false; fmt(document.body); });
 fmt(document.body);
 })();</script>
 <script id="bnv-mc-sync">/* Calculateur toujours synchronisé : recalcAll est déclarée après le calculateur, on l'enveloppe ici, une fois tout chargé */
-(function(){var o=window.recalcAll;if(typeof o!=='function'||o._mcSync)return;var w=function(){var r=o.apply(this,arguments);try{if(window.mcSync)window.mcSync();}catch(e){console.warn('[BNV] mcSync :',e);}return r;};w._mcSync=true;window.recalcAll=w;try{if(window.mcSync)window.mcSync();}catch(e){}})();</script>
+(function(){var o=window.recalcAll;if(typeof o!=='function'||o._mcSync)return;var w=function(){try{return o.apply(this,arguments);}finally{try{if(window.mcSync)window.mcSync();}catch(e){console.warn('[BNV] mcSync :',e);}}};/* synchronise même si recalcAll échoue */w._mcSync=true;window.recalcAll=w;try{if(window.mcSync)window.mcSync();}catch(e){}})();</script>
 </body>
 </html>

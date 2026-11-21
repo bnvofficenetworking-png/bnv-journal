@@ -1611,7 +1611,12 @@ html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 .bnv-lp-btn2{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.35)}
 .bnv-lp-btn2:hover{background:rgba(255,255,255,.14)}
 .bnv-lp-mini{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;font-size:13px;color:rgba(255,255,255,.7)}
-.bnv-lp-hero-card{flex:0 0 auto;scroll-margin-top:90px;color:var(--txt)}
+.bnv-lp-hero-card{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto;color:var(--txt);
+background:rgba(2,6,14,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.bnv-lp-hero-card.open{display:flex;animation:bnvCvIn .25s ease-out}
+#login-screen.bnv-lp-modal .bnv-lp-hero{z-index:30}   /* fenêtre de connexion au-dessus de la barre du haut */
+.bnv-lp-x{position:fixed;top:18px;right:22px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer;z-index:21}
+.bnv-lp-x:hover{background:rgba(255,255,255,.18)}
 .bnv-lp-hero-card .login-card{margin:0}
 .bnv-lp-stats{border-top:1px solid rgba(255,255,255,.1);background:rgba(3,8,18,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-bottom:46px}
 .bnv-lp-stats-in{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding-top:22px;padding-bottom:22px;text-align:center}
@@ -1660,9 +1665,9 @@ html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 .bnv-lp-rv.in{opacity:1;transform:none}
 #bnv-restore-loader{position:fixed!important;z-index:5}
 @media (max-width:1100px){.bnv-lp-links{display:none}.bnv-lp-hero h1{font-size:48px}.bnv-lp-grid{grid-template-columns:1fr 1fr}.bnv-lp-stats-in{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:900px){.bnv-lp-hero-in{flex-direction:column;align-items:stretch;text-align:left}.bnv-lp-hero-card{display:flex;justify-content:center}.bnv-lp-hero-card .login-card{width:100%}
+@media (max-width:900px){.bnv-lp-hero-in{flex-direction:column;align-items:stretch;text-align:left}.bnv-lp-hero-card .login-card{width:100%}
 .bnv-lp-split,.bnv-lp-steps{grid-template-columns:1fr}.bnv-lp-foot-cols{grid-template-columns:1fr 1fr}.bnv-lp-sec{padding:70px 0}.bnv-lp-sec h2,.bnv-lp-band h2{font-size:30px}}
-@media (max-width:600px){.bnv-lp-wrap{padding:0 18px}.bnv-lp-hero h1{font-size:40px}.bnv-lp-grid{grid-template-columns:1fr}.bnv-lp-stats-in{grid-template-columns:1fr 1fr}.bnv-lp-stats b{font-size:24px}.bnv-lp-gauge{grid-template-columns:110px 1fr 40px}.bnv-lp-foot-cols{grid-template-columns:1fr}}
+@media (max-width:600px){.bnv-lp-hero-card{padding:72px 12px 24px;align-items:flex-start}.bnv-lp-wrap{padding:0 18px}.bnv-lp-hero h1{font-size:40px}.bnv-lp-grid{grid-template-columns:1fr}.bnv-lp-stats-in{grid-template-columns:1fr 1fr}.bnv-lp-stats b{font-size:24px}.bnv-lp-gauge{grid-template-columns:110px 1fr 40px}.bnv-lp-foot-cols{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.bnv-lp-rv{opacity:1;transform:none;transition:none}}
 </style>
 </head>
@@ -1695,7 +1700,8 @@ html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 <p>Notez chaque trade, respectez vos limites de perte et voyez en temps réel ce qui fonctionne vraiment dans votre méthode. Journal, gestion du risque et statistiques réunis au même endroit.</p>
 <div class="bnv-lp-mini"><span>✓ Connexion sécurisée</span><span>✓ Synchronisé sur tous vos appareils</span><span>✓ Calculs vérifiés</span></div>
 </div>
-<div class="bnv-lp-hero-card" id="bnv-lp-card">
+<div class="bnv-lp-hero-card" id="bnv-lp-card" onclick="if(event.target===this)bnvLpClose()">
+<button type="button" class="bnv-lp-x" onclick="bnvLpClose()" aria-label="Fermer">✕</button>
 <div class="login-card">
 <div class="login-logo">
 <div class="login-logo-icon">BNV</div>
@@ -9584,8 +9590,12 @@ fmt(document.body);
 function ls(){return document.getElementById('login-screen');}
 window.bnvLpGo=function(id){var e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});};
 window.bnvLpAuth=function(tab){try{if(typeof switchLoginTab==='function')switchLoginTab(tab);}catch(e){}
-var c=document.getElementById('bnv-lp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});
-setTimeout(function(){var f=document.getElementById(tab==='register'?'reg-username':'login-username');if(f)try{f.focus({preventScroll:true});}catch(e){}},450);};
+var c=document.getElementById('bnv-lp-card');if(c)c.classList.add('open');var L=ls();if(L)L.classList.add('bnv-lp-modal');
+setTimeout(function(){var f=document.getElementById(tab==='register'?'reg-username':'login-username');if(f)try{f.focus({preventScroll:true});}catch(e){}},120);};
+window.bnvLpClose=function(){var c=document.getElementById('bnv-lp-card');if(c)c.classList.remove('open');var L=ls();if(L)L.classList.remove('bnv-lp-modal');};
+document.addEventListener('keydown',function(e){if(e.key==='Escape')bnvLpClose();});
+/* écran d'attente du compte (dans la carte) : ouvrir la fenêtre pour qu'il soit visible */
+try{var gp=document.getElementById('gate-panel');if(gp)new MutationObserver(function(){if(gp.style.display==='block'){var c=document.getElementById('bnv-lp-card');if(c)c.classList.add('open');var L=ls();if(L)L.classList.add('bnv-lp-modal');}}).observe(gp,{attributes:true,attributeFilter:['style']});}catch(e){}
 try{var hi=document.querySelector('.header .logo-circle img');document.querySelectorAll('.bnv-lp-flogo').forEach(function(cl){if(hi){cl.textContent='';cl.appendChild(hi.cloneNode());cl.classList.add('bnv-has-img');}});}catch(e){}
 var els=document.querySelectorAll('.bnv-lp-rv');
 if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{root:ls(),threshold:.15});els.forEach(function(e){io.observe(e);});}

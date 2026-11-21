@@ -3231,7 +3231,8 @@ if(window.mcR1Edited){
 var v=parseFloat(document.getElementById('mc-r1-disp').value);
 if(!isNaN(v)&&v>0) return v;
 }
-return mcGetCap()*mcGetOperPct()/100*mcGetDpct()/100/mcGetTpd();
+if(!mcDpctEdited && !mcTpdEdited && typeof bnvR1Actif==='function' && typeof bnvPerteDuJour==='function') return bnvR1Actif(bnvPerteDuJour());   // synchronisé : R1 du profil actif
+  return mcGetCap()*mcGetOperPct()/100*mcGetDpct()/100/mcGetTpd();
 }
 window.mcRefresh=function(){
 const cap=mcGetCap(),dpct=mcGetDpct(),tpd=mcGetTpd();
@@ -3289,8 +3290,9 @@ if(window.mcRefresh) window.mcRefresh();
 (function(){
 function mcSyncFromDashboard(){
 const elCap   = document.getElementById('c-capital');
-const elDPct  = document.getElementById('c-day-loss-pct');
-const elTMax  = document.getElementById('t-max-day');
+const _lp2    = window.activeLossProfile === 'LP2';   // limites du profil actif (LP1 ou LP2)
+    const elDPct  = document.getElementById(_lp2 ? 'c2-day-loss-pct' : 'c-day-loss-pct');
+    const elTMax  = document.getElementById(_lp2 ? 't2-max-day' : 't-max-day');
 const cap     = elCap  ? (parseFloat(elCap.value)||50000)  : 50000;
 const dpct    = elDPct ? (parseFloat(elDPct.value)||1)     : 1;
 const tpd     = elTMax ? (parseInt(elTMax.value)||5)       : 5;
@@ -3987,7 +3989,7 @@ const months= Math.floor(days / 30.44);
 const years = Math.floor(days / 365.25);
 if (years >= 1) {
 const rem = Math.floor((days - years * 365.25) / 30.44);
-return years + 'a' + (rem > 0 ? ' ' + rem + 'm' : '');
+return years + 'a' + (rem > 0 ? ' ' + rem + 'mo' : '');
 }
 if (months >= 1) {
 const remD = days - Math.floor(months * 30.44);
@@ -4011,6 +4013,28 @@ return mins + 'm' + (remS > 0 ? ' ' + remS + 's' : '');
 }
 return secs + 's';
 }
+// ── R1 du profil actif (une seule règle pour le formulaire, le R réalisé et le calculateur) ──
+// PR1 : Capital opérationnel × « Risk par Trade » %.
+// PR2 : R1 de la phase en cours, calculé comme « Paramètres de Risque 2 » : phase 1 tant que les pertes réalisées du jour
+//       (hors Backtest) restent sous la « Perte accumulée max » de la phase 1, puis phase 2 (« Nouveau risque/trade »).
+function bnvPerteDuJour() {
+  const today = (typeof bnvToday === 'function') ? bnvToday() : new Date().toISOString().slice(0, 10);
+  return (trades || []).filter(t => (!t.type || t.type === 'Trade') && t.compte !== 'Backtest' && (t.pnl || 0) < 0 &&
+    (t.closeDt ? t.closeDt.split('T')[0] : (t.date || '')) === today).reduce((s, t) => s + Math.abs(t.pnl), 0);
+}
+function bnvR1Actif(perteJour) {
+  const v = id => parseFloat((document.getElementById(id) || {}).value);
+  const cap  = (v('c-capital') || 10000) + (v('c-deposit') || 0) - (v('c-withdrawal') || 0);
+  const oper = cap * (v('c-oper-pct') || 10) / 100;
+  if (window.activeLossProfile !== 'LP2') return oper * (v('c-risk-pct') || 0.4) / 100;
+  const jour = oper * (v('c2-day-loss-pct') || 2) / 100;
+  const half = Math.floor((parseInt((document.getElementById('t2-max-day') || {}).value) || 10) / 2);
+  if (half <= 0) return 0;
+  const p1 = v('c-phase1-pct') || 62.5;
+  const perte1 = jour * p1 / 100;
+  return ((perteJour || 0) >= perte1 - 0.005 ? (jour - perte1) : perte1) / half;
+}
+
 function syncRRAfterManual(val) {
 }
 function calcTrade() {
@@ -4025,7 +4049,7 @@ document.getElementById('f-rr').value = rr > 0 ? '1:' + rr.toFixed(2) : '';
 document.getElementById('c-rr-val').textContent = rr > 0 ? '1:' + rr.toFixed(2) : '—';
 const operPct = parseFloat(document.getElementById('c-oper-pct')?.value) || 10;
 const _scenF = (typeof bnvScenFactor === 'function') ? bnvScenFactor() : 1;
-const riskDolAuto = (capital * operPct / 100) * riskPct / 100 * _scenF;   // coefficient de risque du scénario (plan du trader)
+const riskDolAuto = bnvR1Actif(bnvPerteDuJour()) * _scenF;   // R1 du profil actif (PR1 ou phase PR2) × coefficient du scénario   // coefficient de risque du scénario (plan du trader)
 const riskEl = document.getElementById('f-risk');
 if (riskEl && !riskEl._manualOverride) {
 riskEl.value = riskDolAuto > 0 ? riskDolAuto.toFixed(2) : '';
@@ -4375,7 +4399,7 @@ return m;
 function _minutesToHold(avg) {
 if (!avg || avg <= 0) return '—';
 avg = Math.round(avg);
-if (avg >= 525960) { const a = Math.floor(avg/525960); const rm = Math.round((avg%525960)/43829); return a+'a'+(rm>0?' '+rm+'m':''); }
+if (avg >= 525960) { const a = Math.floor(avg/525960); const rm = Math.round((avg%525960)/43829); return a+'a'+(rm>0?' '+rm+'mo':''); }
 if (avg >= 43829)  { const mo = Math.floor(avg/43829);  const rj = Math.round((avg%43829)/1440);  return mo+'mo'+(rj>0?' '+rj+'j':''); }
 if (avg >= 10080)  { const sem = Math.floor(avg/10080); const rj = Math.round((avg%10080)/1440);  return sem+'sem'+(rj>0?' '+rj+'j':''); }
 if (avg >= 1440)   { const j = Math.floor(avg/1440);    const rh = Math.round((avg%1440)/60);     return j+'j'+(rh>0?' '+rh+'h':''); }
@@ -4388,7 +4412,7 @@ return avg+'m';
 * @returns {Object} — tous les indicateurs calculés
 */
 function _calcStats(tList) {
-tList = _bnvClosed(tList);
+  tList = _bnvClosed(tList).sort((a,b)=>{ const da=a.closeDt||a.openDt||'', db=b.closeDt||b.openDt||''; return da<db?-1:da>db?1:0; });   // ordre chronologique des clôtures
 const n = tList ? tList.length : 0;
 const empty = {
 n:0, wins:0, losses:0, grossWin:0, grossLoss:0,
@@ -4413,7 +4437,7 @@ const wr        = wins.length / n * 100;
 const pf        = grossLoss > 0 ? grossWin / grossLoss : wins.length > 0 ? Infinity : 0;
 const avgWin    = wins.length   > 0 ? grossWin  / wins.length   : 0;
 const avgLoss   = losses.length > 0 ? grossLoss / losses.length : 0;
-const ev        = wr/100 * avgWin - (1 - wr/100) * avgLoss;
+const ev        = tList.reduce((s,t)=>s+(t.pnl||0),0) / n;   // espérance = P&L total ÷ trades (un trade à 0 $ compte 0, pas une perte)
 const maxP      = wins.length   > 0 ? Math.max(...wins.map(t=>t.pnl))   : 0;
 const maxL      = losses.length > 0 ? Math.min(...losses.map(t=>t.pnl)) : 0;
 const rrReal    = avgLoss > 0 ? (avgWin / avgLoss).toFixed(2) : '—';
@@ -4568,13 +4592,14 @@ const today      = bnvToday();
 const monthStart = today.slice(0,7);
 const weekStart  = getMonday();
 const _tDate = t => t.closeDt ? t.closeDt.split('T')[0] : (t.date || (t.openDt ? t.openDt.split('T')[0] : ''));
-const tradesDay   = trades.filter(t => _tDate(t) === today);
-const tradesWeek  = trades.filter(t => _tDate(t) >= weekStart);
-const tradesMonth = trades.filter(t => { const d=_tDate(t); return d && d.startsWith(monthStart); });
+const _live       = trades.filter(t => t.compte !== 'Backtest');   // un Backtest ne consomme pas les limites du compte
+  const tradesDay   = _live.filter(t => _tDate(t) === today);
+  const tradesWeek  = _live.filter(t => _tDate(t) >= weekStart);
+  const tradesMonth = _live.filter(t => { const d=_tDate(t); return d && d.startsWith(monthStart); });
 const dayLoss   = tradesDay.filter(t=>(t.pnl||0)<0).reduce((s,t)=>s+Math.abs(t.pnl),0);
 const weekLoss  = tradesWeek.filter(t=>(t.pnl||0)<0).reduce((s,t)=>s+Math.abs(t.pnl),0);
 const monthLoss = tradesMonth.filter(t=>(t.pnl||0)<0).reduce((s,t)=>s+Math.abs(t.pnl),0);
-const _sorted = _bnvClosed(trades).sort((a,b)=>{ const da=a.closeDt||a.openDt||'',db=b.closeDt||b.openDt||''; return da<db?-1:da>db?1:0; });
+const _sorted = _bnvClosed(_live).sort((a,b)=>{ const da=a.closeDt||a.openDt||'',db=b.closeDt||b.openDt||''; return da<db?-1:da>db?1:0; });
 let _peak=0,_cum=0,drawdown=0;
 _sorted.forEach(t=>{ _cum+=(t.pnl||0); if(_cum>_peak)_peak=_cum; const _dd=_peak-_cum; if(_dd>drawdown)drawdown=_dd; });
 setGauge('rg-day',   dayLoss,   dayLimit);
@@ -5334,7 +5359,7 @@ const c = pnlList.reduce((s, v) => s + v, 0) >= 0 ? 'var(--bull)' : 'var(--bear)
 return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block"><polyline points="${coords.join(' ')}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 function initTabActif() {
-const src = _azFilteredTrades();
+  const src = _azFilteredTrades().slice().sort((a,b)=>{ const da=a.closeDt||a.openDt||'', db=b.closeDt||b.openDt||''; return da<db?-1:da>db?1:0; });   // drawdown et séries dans l'ordre des clôtures
 const assetMap = {};
 src.forEach(t => {
 const a = t.asset || 'Autre';
@@ -7925,7 +7950,7 @@ function instr(a) { return (typeof extractAsset === 'function') ? extractAsset(a
 function operCap() {
 return (num('c-capital', 25000) + num('c-deposit', 0) - num('c-withdrawal', 0)) * num('c-oper-pct', 10) / 100;
 }
-function riskUnit() { return operCap() * num('c-risk-pct', 1) / 100; }
+function riskUnit() { return (typeof bnvR1Actif === 'function') ? bnvR1Actif(0) : operCap() * num('c-risk-pct', 1) / 100; }
 window.bnvRiskOf = function (t) { return (t.riskDol > 0) ? t.riskDol : riskUnit() * ((typeof bnvScenFactor === 'function') ? bnvScenFactor(t.scen || 'A') : 1); };
 window.bnvROf = function (t) { var r = bnvRiskOf(t); return r > 0 ? (t.pnl || 0) / r : 0; };
 function isTrade(t) { return !t.type || t.type === 'Trade'; }
@@ -7972,7 +7997,7 @@ var pad = function (n) { return String(n).padStart(2, '0'); };
 var today = bnvToday();
 var monday = (typeof getMonday === 'function') ? getMonday() : today;
 var month = today.slice(0, 7);
-var losers = T().filter(function (t) { return isTrade(t) && (t.pnl || 0) < 0; });
+var losers = T().filter(function (t) { return isTrade(t) && t.compte !== 'Backtest' && (t.pnl || 0) < 0; });
 function agg(f) { var l = losers.filter(f); return { loss: l.reduce(function (s, t) { return s + Math.abs(t.pnl); }, 0), n: l.length }; }
 var sx = window.activeLossProfile === 'LP2' ? '2' : '';   // profil actif LP1 / LP2
 var P = [

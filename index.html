@@ -2979,14 +2979,14 @@ Synchronisé avec Dashboard
 <div style="display:flex;flex-direction:column;gap:4px;">
 <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3)">Perte Max / Jour (%)</div>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-<input id="mc-dpct" type="number" value="1.2" step="0.1" oninput="mcRefresh();mcDpctEdited=true;document.getElementById('mc-dpct-reset').style.display='inline-flex'" style="background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:13px;font-family:var(--sans);padding:7px 12px;outline:none;width:100px;transition:border-color .15s" onfocus="this.style.borderColor='var(--bull)'" onblur="this.style.borderColor=''" title="Modifiable — valeur par défaut depuis Dashboard"/>
+<input id="mc-dpct" type="number" value="1.2" step="0.1" oninput="mcDpctEdited=true;mcRefresh();document.getElementById('mc-dpct-reset').style.display='inline-flex'" style="background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:13px;font-family:var(--sans);padding:7px 12px;outline:none;width:100px;transition:border-color .15s" onfocus="this.style.borderColor='var(--bull)'" onblur="this.style.borderColor=''" title="Modifiable — valeur par défaut depuis Dashboard"/>
 <span id="mc-dpct-reset" title="Réinitialiser depuis Dashboard" onclick="mcDpctReset()" style="display:none;cursor:pointer;align-items:center;font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:5px;padding:3px 7px;white-space:nowrap">↺ Reset</span>
 </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:4px;">
 <div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt3)">Trades / Jour</div>
 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-<input id="mc-tpd" type="number" value="5" min="1" step="1" oninput="mcRefresh();mcTpdEdited=true;document.getElementById('mc-tpd-reset').style.display='inline-flex'" style="background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:13px;font-family:var(--sans);padding:7px 12px;outline:none;width:90px;transition:border-color .15s" onfocus="this.style.borderColor='var(--bull)'" onblur="this.style.borderColor=''" title="Modifiable — valeur par défaut depuis Dashboard"/>
+<input id="mc-tpd" type="number" value="5" min="1" step="1" oninput="mcTpdEdited=true;mcRefresh();document.getElementById('mc-tpd-reset').style.display='inline-flex'" style="background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;color:var(--txt);font-size:13px;font-family:var(--sans);padding:7px 12px;outline:none;width:90px;transition:border-color .15s" onfocus="this.style.borderColor='var(--bull)'" onblur="this.style.borderColor=''" title="Modifiable — valeur par défaut depuis Dashboard"/>
 <span id="mc-tpd-reset" title="Réinitialiser depuis Dashboard" onclick="mcTpdReset()" style="display:none;cursor:pointer;align-items:center;font-size:10px;color:var(--amber);background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);border-radius:5px;padding:3px 7px;white-space:nowrap">↺ Reset</span>
 </div>
 </div>
@@ -3222,7 +3222,8 @@ sub.textContent = label;
 function mcM(n,d=2){return '$'+Number(n).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(',','.');}
 function mcN(n,d=2){return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(',','.');}
 function mcEl(id){return document.getElementById(id);}
-function mcGetCap(){return parseFloat(mcEl('mc-cap').value)||50000;}
+function mcCapTotal(){var v=function(id){var e=document.getElementById(id);return e?(parseFloat(e.value)||0):0;};return (v('c-capital')||10000)+v('c-deposit')-v('c-withdrawal');}   // même capital total que le Dashboard
+function mcGetCap(){return parseFloat(mcEl('mc-cap').value)||mcCapTotal();}
 function mcGetOperPct(){var el=document.getElementById('c-oper-pct');return el?(parseFloat(el.value)||10):10;}
 function mcGetDpct(){return parseFloat(mcEl('mc-dpct').value)||1.2;}
 function mcGetTpd(){return parseInt(mcEl('mc-tpd').value)||5;}
@@ -3237,7 +3238,7 @@ if(!mcDpctEdited && !mcTpdEdited && typeof bnvR1Actif==='function' && typeof bnv
 window.mcRefresh=function(){
 const cap=mcGetCap(),dpct=mcGetDpct(),tpd=mcGetTpd();
 if(!window.mcR1Edited){
-const autoR1=mcGetCap()*mcGetOperPct()/100*mcGetDpct()/100/mcGetTpd();
+const autoR1=mcGetR1();   // même R1 que le Dashboard tant que rien n'est modifié ici
 const inp=mcEl('mc-r1-disp');
 if(inp) inp.value=autoR1.toFixed(2);
 }
@@ -3260,9 +3261,9 @@ mcEl('mc-rs-r1').textContent=mcM(r1,0);
 if(mcSelSym) mcRenderDetail();
 };
 /* ── SYNC AUTOMATIQUE Dashboard → Calculateur ── */
-var mcDpctEdited = false;
-var mcTpdEdited = false;
-var mcR1Edited = false;
+window.mcDpctEdited = false;   // une seule variable, partagée avec les champs (oninput)
+window.mcTpdEdited = false;
+window.mcR1Edited = false;
 window.mcTpdReset = function(){
 mcTpdEdited = false;
 var elTMax = document.getElementById('t-max-day');
@@ -3271,12 +3272,14 @@ document.getElementById('mc-tpd').value = tpd;
 var rst = document.getElementById('mc-tpd-reset');
 if(rst) rst.style.display = 'none';
 if(window.mcRefresh) window.mcRefresh();
+if(window.mcSync) window.mcSync();   // valeur du profil actif (LP1 ou LP2)
 };
 window.mcR1Reset = function(){
 mcR1Edited = false;
 var rst = document.getElementById('mc-r1-reset');
 if(rst) rst.style.display = 'none';
 if(window.mcRefresh) window.mcRefresh();
+if(window.mcSync) window.mcSync();   // valeur du profil actif (LP1 ou LP2)
 };
 window.mcDpctReset = function(){
 mcDpctEdited = false;
@@ -3286,6 +3289,7 @@ document.getElementById('mc-dpct').value = dpct;
 var rst = document.getElementById('mc-dpct-reset');
 if(rst) rst.style.display = 'none';
 if(window.mcRefresh) window.mcRefresh();
+if(window.mcSync) window.mcSync();   // valeur du profil actif (LP1 ou LP2)
 };
 (function(){
 function mcSyncFromDashboard(){
@@ -3293,7 +3297,7 @@ const elCap   = document.getElementById('c-capital');
 const _lp2    = window.activeLossProfile === 'LP2';   // limites du profil actif (LP1 ou LP2)
     const elDPct  = document.getElementById(_lp2 ? 'c2-day-loss-pct' : 'c-day-loss-pct');
     const elTMax  = document.getElementById(_lp2 ? 't2-max-day' : 't-max-day');
-const cap     = elCap  ? (parseFloat(elCap.value)||50000)  : 50000;
+const cap     = mcCapTotal();   // capital + dépôts - retraits
 const dpct    = elDPct ? (parseFloat(elDPct.value)||1)     : 1;
 const tpd     = elTMax ? (parseInt(elTMax.value)||5)       : 5;
 const capChanged = parseFloat(document.getElementById('mc-cap').value) !== cap;
@@ -3323,11 +3327,9 @@ document.addEventListener('input',  function(e){ if(e.target && e.target.id===id
 document.addEventListener('change', function(e){ if(e.target && e.target.id===id){ setTimeout(window.mcBrokerChanged,0); } });
 document.addEventListener('input',  function(e){ if(e.target && e.target.id===id){ setTimeout(window.mcBrokerChanged,0); } });
 });
-var _origRecalcAll = window.recalcAll;
-window.recalcAll = function(){
-if(_origRecalcAll) _origRecalcAll.apply(this, arguments);
-mcSyncFromDashboard();
-};
+window.mcSync = mcSyncFromDashboard;   // appelé après chaque recalcAll (voir le script de fin de page)
+document.addEventListener('change', function(e){ var id=e.target&&e.target.id; if(id && /^(c-|c2-|t-|t2-)/.test(id)) mcSyncFromDashboard(); });
+document.addEventListener('input',  function(e){ var id=e.target&&e.target.id; if(id && /^(c-|c2-|t-|t2-)/.test(id)) mcSyncFromDashboard(); });
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ mcSyncFromDashboard(); mcUpdateSubtitle(); }, 300); });
 setTimeout(function(){ mcSyncFromDashboard(); mcUpdateSubtitle(); }, 600);
 })();
@@ -9304,5 +9306,7 @@ requestAnimationFrame(function () { pending = false; fmt(document.body); });
 }).observe(document.body, { childList: true, subtree: true, characterData: true });
 fmt(document.body);
 })();</script>
+<script id="bnv-mc-sync">/* Calculateur toujours synchronisé : recalcAll est déclarée après le calculateur, on l'enveloppe ici, une fois tout chargé */
+(function(){var o=window.recalcAll;if(typeof o!=='function'||o._mcSync)return;var w=function(){var r=o.apply(this,arguments);try{if(window.mcSync)window.mcSync();}catch(e){console.warn('[BNV] mcSync :',e);}return r;};w._mcSync=true;window.recalcAll=w;try{if(window.mcSync)window.mcSync();}catch(e){}})();</script>
 </body>
 </html>

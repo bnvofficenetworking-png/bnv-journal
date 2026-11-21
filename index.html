@@ -1584,6 +1584,87 @@ border:1px solid rgba(77,159,255,.35);background:rgba(77,159,255,.08);border-rad
 html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 
 </style>
+<style id="bnv-site-css">
+/* ══ Site d'accueil (écran de connexion) — mise en page seulement ══ */
+#login-screen{display:block!important;overflow-y:auto;overflow-x:hidden;padding:0!important;scroll-behavior:smooth;background:#050b18!important}
+#login-screen.hidden{display:none!important}
+#login-screen>*{margin:0}
+#login-screen::after{background:linear-gradient(180deg,rgba(5,11,24,.15),rgba(5,11,24,.05) 30%,rgba(5,11,24,.35))!important}
+.bnv-lp-wrap{max-width:1200px;margin:0 auto;padding:0 32px;position:relative}
+.bnv-lp-hero-txt,.bnv-lp-sec,.bnv-lp-band,.bnv-lp-foot,.bnv-lp-stats{text-align:left;hyphens:none;-webkit-hyphens:none}
+.bnv-lp-stats-in{text-align:center}
+.bnv-lp-links{display:flex;gap:26px;margin-left:auto;margin-right:26px}
+.bnv-lp-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;transition:color .15s}
+.bnv-lp-links a:hover{color:#fff}
+.bnv-lp-hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:64px;color:#fff}
+.bnv-lp-hero-in{display:flex;align-items:center;justify-content:space-between;gap:48px;flex:1;padding-top:40px;padding-bottom:40px}
+.bnv-lp-hero-txt{max-width:560px;animation:bnvCvIn .6s ease-out}
+.bnv-lp-badge{display:inline-flex;align-items:center;gap:9px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7ee2b8;border:1px solid rgba(34,211,143,.45);background:rgba(34,211,143,.08);border-radius:999px;padding:7px 15px}
+.bnv-lp-badge i{width:7px;height:7px;border-radius:50%;background:#22d38f;box-shadow:0 0 0 4px rgba(34,211,143,.2)}
+.bnv-lp-hero h1{font-size:60px;line-height:1.05;font-weight:600;margin:22px 0 18px;letter-spacing:-.02em;color:#fff}
+.bnv-lp-hero h1 span{background:linear-gradient(90deg,#22d38f,#4d9fff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.bnv-lp-hero p{font-size:17px;line-height:1.65;color:rgba(255,255,255,.78)}
+.bnv-lp-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.bnv-lp-btn,.bnv-lp-btn2{font-family:inherit;font-size:15px;font-weight:500;border-radius:10px;padding:13px 26px;cursor:pointer;transition:transform .15s,filter .15s,background .15s}
+.bnv-lp-btn{background:#22c55e;color:#04140b;border:0;box-shadow:0 10px 30px rgba(34,197,94,.3)}
+.bnv-lp-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.bnv-lp-btn2{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.35)}
+.bnv-lp-btn2:hover{background:rgba(255,255,255,.14)}
+.bnv-lp-mini{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;font-size:13px;color:rgba(255,255,255,.7)}
+.bnv-lp-hero-card{flex:0 0 auto;scroll-margin-top:90px;color:var(--txt)}
+.bnv-lp-hero-card .login-card{margin:0}
+.bnv-lp-stats{border-top:1px solid rgba(255,255,255,.1);background:rgba(3,8,18,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);margin-bottom:46px}
+.bnv-lp-stats-in{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding-top:22px;padding-bottom:22px;text-align:center}
+.bnv-lp-stats b{display:block;font-size:30px;font-weight:300;color:#fff;letter-spacing:.02em}
+.bnv-lp-stats span{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:6px}
+.bnv-lp-sec{padding:96px 0;background:rgba(5,11,24,.9);color:#e6edf7;position:relative}
+.bnv-lp-alt{background:rgba(9,20,38,.92)}
+.bnv-lp-kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#22d38f;margin-bottom:12px}
+.bnv-lp-sec h2,.bnv-lp-band h2{font-size:38px;line-height:1.15;font-weight:600;color:#fff;margin:0 0 14px;letter-spacing:-.01em}
+.bnv-lp-sub{font-size:16px;line-height:1.6;color:rgba(230,237,247,.7);max-width:640px}
+.bnv-lp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.bnv-lp-card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:26px;transition:transform .2s,border-color .2s}
+.bnv-lp-card:hover{transform:translateY(-4px);border-color:rgba(77,159,255,.5)}
+.bnv-lp-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;background:linear-gradient(135deg,#1f8f5f,#2a6fd6);margin-bottom:16px}
+.bnv-lp-card h3,.bnv-lp-step h3{font-size:18px;font-weight:500;color:#fff;margin:0 0 8px}
+.bnv-lp-card p,.bnv-lp-step p{font-size:14px;line-height:1.6;color:rgba(230,237,247,.68);margin:0}
+.bnv-lp-split{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.bnv-lp-list{list-style:none;padding:0;margin:24px 0 0}
+.bnv-lp-list li{position:relative;padding:9px 0 9px 30px;font-size:15px;color:rgba(230,237,247,.85);border-bottom:1px solid rgba(255,255,255,.06)}
+.bnv-lp-list li::before{content:'✓';position:absolute;left:0;top:8px;width:20px;height:20px;border-radius:50%;background:rgba(34,211,143,.15);color:#22d38f;font-size:12px;display:flex;align-items:center;justify-content:center}
+.bnv-lp-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:26px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.bnv-lp-panel-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;font-size:15px;color:#fff}
+.bnv-lp-panel-h small{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.1em;text-transform:uppercase}
+.bnv-lp-gauge{display:grid;grid-template-columns:150px 1fr 48px;align-items:center;gap:14px;margin:14px 0;font-size:13px;color:rgba(230,237,247,.75)}
+.bnv-lp-gauge div{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.bnv-lp-gauge i{display:block;height:100%;border-radius:99px;background:#22d38f}
+.bnv-lp-gauge b{font-weight:400;text-align:right;color:#fff}
+.bnv-lp-pill{margin-top:18px;font-size:12.5px;color:#9cc8ff;background:rgba(77,159,255,.1);border:1px solid rgba(77,159,255,.3);border-radius:10px;padding:10px 14px}
+.bnv-lp-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.bnv-lp-step{border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:26px;background:rgba(255,255,255,.02)}
+.bnv-lp-step b{display:inline-flex;width:38px;height:38px;border-radius:50%;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#04140b;background:#22c55e;margin-bottom:16px}
+.bnv-lp-band{padding:64px 0;background:linear-gradient(110deg,#0f5c3d,#123d7a);color:#fff}
+.bnv-lp-band-in{display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.bnv-lp-band p{color:rgba(255,255,255,.8);font-style:italic;margin:0}
+.bnv-lp-band .bnv-lp-cta{margin-top:0}
+.bnv-lp-foot{background:#03070f;color:rgba(230,237,247,.6);padding:56px 0 34px;font-size:13px}
+.bnv-lp-foot-cols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:30px;padding-bottom:30px;border-bottom:1px solid rgba(255,255,255,.08)}
+.bnv-lp-foot h4{font-size:13px;font-weight:500;color:#fff;margin:0 0 12px;letter-spacing:.04em}
+.bnv-lp-foot a{display:block;color:rgba(230,237,247,.6);text-decoration:none;margin:7px 0}
+.bnv-lp-foot a:hover{color:#22d38f}
+.bnv-lp-fmotto{margin-top:12px;line-height:1.6}
+.bnv-lp-warn{line-height:1.65;margin:24px 0 10px;font-size:12px}
+.bnv-lp-warn b{color:rgba(255,255,255,.85);font-weight:500}
+.bnv-lp-copy{font-size:12px;color:rgba(230,237,247,.45)}
+.bnv-lp-rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.bnv-lp-rv.in{opacity:1;transform:none}
+#bnv-restore-loader{position:fixed!important;z-index:5}
+@media (max-width:1100px){.bnv-lp-links{display:none}.bnv-lp-hero h1{font-size:48px}.bnv-lp-grid{grid-template-columns:1fr 1fr}.bnv-lp-stats-in{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.bnv-lp-hero-in{flex-direction:column;align-items:stretch;text-align:left}.bnv-lp-hero-card{display:flex;justify-content:center}.bnv-lp-hero-card .login-card{width:100%}
+.bnv-lp-split,.bnv-lp-steps{grid-template-columns:1fr}.bnv-lp-foot-cols{grid-template-columns:1fr 1fr}.bnv-lp-sec{padding:70px 0}.bnv-lp-sec h2,.bnv-lp-band h2{font-size:30px}}
+@media (max-width:600px){.bnv-lp-wrap{padding:0 18px}.bnv-lp-hero h1{font-size:40px}.bnv-lp-grid{grid-template-columns:1fr}.bnv-lp-stats-in{grid-template-columns:1fr 1fr}.bnv-lp-stats b{font-size:24px}.bnv-lp-gauge{grid-template-columns:110px 1fr 40px}.bnv-lp-foot-cols{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.bnv-lp-rv{opacity:1;transform:none;transition:none}}
+</style>
 </head>
 <body>
 <span id="h-kpi-pnl" style="display:none"></span>
@@ -1594,12 +1675,31 @@ html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 <div id="login-screen">
 <div class="bnv-cv-top" aria-label="Barre de navigation">
 <div class="bnv-cv-brand"><div class="bnv-cv-logo" id="bnv-cv-logo">BNV</div><div><b>BNV Trading</b><small>Journal officiel</small></div></div>
+<nav class="bnv-lp-links" aria-label="Sections">
+<a href="#" onclick="bnvLpGo('bnv-lp-feat');return false;">Fonctionnalités</a>
+<a href="#" onclick="bnvLpGo('bnv-lp-risk');return false;">Gestion du risque</a>
+<a href="#" onclick="bnvLpGo('bnv-lp-steps');return false;">Comment ça marche</a>
+<a href="#" onclick="bnvLegalOpen('risque');return false;">Risques</a>
+</nav>
 <div class="bnv-cv-nav">
-<button type="button" class="bnv-cv-ghost" onclick="switchLoginTab('login');var e=document.getElementById('login-username');if(e)e.focus();">Connexion</button>
-<button type="button" class="bnv-cv-solid" onclick="switchLoginTab('register');var e=document.getElementById('reg-username');if(e)e.focus();">Créer un compte</button>
+<button type="button" class="bnv-cv-ghost" onclick="bnvLpAuth('login')">Connexion</button>
+<button type="button" class="bnv-cv-solid" onclick="bnvLpAuth('register')">Créer un compte</button>
 </div>
 </div>
 
+<section class="bnv-lp-hero">
+<div class="bnv-lp-wrap bnv-lp-hero-in">
+<div class="bnv-lp-hero-txt">
+<div class="bnv-lp-badge"><i></i>Nouveau · Calculateur de position Futures &amp; CFD</div>
+<h1>Votre trading,<br/><span>enfin mesuré.</span></h1>
+<p>Notez chaque trade, respectez vos limites de perte et voyez en temps réel ce qui fonctionne vraiment dans votre méthode. Journal, gestion du risque et statistiques réunis au même endroit.</p>
+<div class="bnv-lp-cta">
+<button type="button" class="bnv-lp-btn" onclick="bnvLpAuth('register')">Créer un compte</button>
+<button type="button" class="bnv-lp-btn2" onclick="bnvLpAuth('login')">Se connecter</button>
+</div>
+<div class="bnv-lp-mini"><span>✓ Connexion sécurisée</span><span>✓ Synchronisé sur tous vos appareils</span><span>✓ Calculs vérifiés</span></div>
+</div>
+<div class="bnv-lp-hero-card" id="bnv-lp-card">
 <div class="login-card">
 <div class="login-logo">
 <div class="login-logo-icon">BNV</div>
@@ -1658,6 +1758,85 @@ html[data-theme="ff-light"] .bnv-cv-feat{background:rgba(0,0,0,.015)}
 </div>
 <div class="bnv-login-copy">© 2026 BNV — Tous droits réservés · <a href="#" onclick="bnvLegalOpen('cgu');return false;">Conditions</a> · <a href="#" onclick="bnvLegalOpen('conf');return false;">Confidentialité</a><br>Protégé par reCAPTCHA : les <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">règles de confidentialité</a> et les <a href="https://policies.google.com/terms" target="_blank" rel="noopener">conditions d'utilisation</a> de Google s'appliquent.</div>
 </div>
+</div>
+</div>
+<div class="bnv-lp-stats">
+<div class="bnv-lp-wrap bnv-lp-stats-in">
+<div><b>81</b><span>instruments dans le calculateur</span></div>
+<div><b>LP1 · LP2</b><span>profils de limites de perte</span></div>
+<div><b>6</b><span>analyses : période, actif, timeframe…</span></div>
+<div><b>100</b><span>trades d'exemple pour découvrir</span></div>
+<div><b>24 h/24</b><span>accès depuis tous vos appareils</span></div>
+</div>
+</div>
+</section>
+<section class="bnv-lp-sec" id="bnv-lp-feat">
+<div class="bnv-lp-wrap">
+<div class="bnv-lp-kicker">Fonctionnalités</div>
+<h2>Tout ce qu'il faut pour trader avec discipline</h2>
+<p class="bnv-lp-sub">Chaque écran a un rôle précis : préparer, exécuter, mesurer, corriger.</p>
+<div class="bnv-lp-grid">
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">✎</div><h3>Journal complet</h3><p>Actif, sens, stop, objectif, volume, scénario, méthode, captures d'écran et checklist pour chaque trade.</p></div>
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">⛨</div><h3>Gestion du risque</h3><p>Limites de perte jour, semaine et mois (LP1 / LP2) et risque par trade (PR1 / PR2) recalculés à chaque trade.</p></div>
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">⊞</div><h3>Calculateur de position</h3><p>Nombre de contrats Futures ou de lots CFD selon votre R1 et votre stop, synchronisé avec votre Dashboard.</p></div>
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">▦</div><h3>Analyses détaillées</h3><p>Résultats par mois, année, jour de la semaine, semaine, actif et timeframe, comptés à la date de clôture.</p></div>
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">◎</div><h3>Mesure du processus</h3><p>Taux de conformité au plan, espérance et drawdown en R, par scénario et par méthode.</p></div>
+<div class="bnv-lp-card bnv-lp-rv"><div class="bnv-lp-ic">☑</div><h3>Plan et checklists</h3><p>Vos règles, vos checklists avant trade et vos abstentions notées : la discipline devient visible.</p></div>
+</div>
+</div>
+</section>
+<section class="bnv-lp-sec bnv-lp-alt" id="bnv-lp-risk">
+<div class="bnv-lp-wrap bnv-lp-split">
+<div class="bnv-lp-rv">
+<div class="bnv-lp-kicker">Gestion du risque</div>
+<h2>Vos limites de perte, surveillées en direct</h2>
+<p class="bnv-lp-sub">Réglez votre capital et vos pourcentages une fois : le journal calcule le reste et vous prévient avant de dépasser.</p>
+<ul class="bnv-lp-list">
+<li>Perte maximale par jour, par semaine et par mois</li>
+<li>Nombre de pertes autorisées et stop-out du compte</li>
+<li>Risque par trade fixe (PR1) ou en deux phases (PR2)</li>
+<li>Les trades de Backtest ne consomment pas vos limites</li>
+</ul>
+</div>
+<div class="bnv-lp-panel bnv-lp-rv" aria-hidden="true">
+<div class="bnv-lp-panel-h"><span>Suivi des limites</span><small>Illustration</small></div>
+<div class="bnv-lp-gauge"><span>Perte journalière</span><div><i style="width:35%"></i></div><b>35 %</b></div>
+<div class="bnv-lp-gauge"><span>Perte hebdomadaire</span><div><i style="width:52%;background:#f5c35a"></i></div><b>52 %</b></div>
+<div class="bnv-lp-gauge"><span>Perte mensuelle</span><div><i style="width:18%"></i></div><b>18 %</b></div>
+<div class="bnv-lp-gauge"><span>Drawdown max</span><div><i style="width:9%"></i></div><b>9 %</b></div>
+<div class="bnv-lp-pill">Profil actif : LP1 · R1 = 0,4 % du capital opérationnel</div>
+</div>
+</div>
+</section>
+<section class="bnv-lp-sec" id="bnv-lp-steps">
+<div class="bnv-lp-wrap">
+<div class="bnv-lp-kicker">Comment ça marche</div>
+<h2>Prêt en trois étapes</h2>
+<div class="bnv-lp-steps">
+<div class="bnv-lp-step bnv-lp-rv"><b>1</b><h3>Créez votre compte</h3><p>Votre journal est privé et lié à votre adresse e-mail.</p></div>
+<div class="bnv-lp-step bnv-lp-rv"><b>2</b><h3>Réglez votre plan</h3><p>Capital, part opérationnelle, limites de perte et risque par trade.</p></div>
+<div class="bnv-lp-step bnv-lp-rv"><b>3</b><h3>Saisissez vos trades</h3><p>Le Dashboard, les limites et les analyses se mettent à jour automatiquement.</p></div>
+</div>
+</div>
+</section>
+<section class="bnv-lp-band">
+<div class="bnv-lp-wrap bnv-lp-band-in">
+<div><h2>Commencez votre journal aujourd'hui</h2><p>« Les profits rapides ne garantissent pas les succès. »</p></div>
+<div class="bnv-lp-cta"><button type="button" class="bnv-lp-btn" onclick="bnvLpAuth('register')">Créer un compte</button><button type="button" class="bnv-lp-btn2" onclick="bnvLpAuth('login')">Se connecter</button></div>
+</div>
+</section>
+<footer class="bnv-lp-foot">
+<div class="bnv-lp-wrap">
+<div class="bnv-lp-foot-cols">
+<div><div class="bnv-cv-brand"><div class="bnv-cv-logo bnv-lp-flogo">BNV</div><div><b>BNV Trading</b><small>Journal officiel</small></div></div><p class="bnv-lp-fmotto">Journal de trading, gestion du risque et analyses.</p></div>
+<div><h4>Produit</h4><a href="#" onclick="bnvLpGo('bnv-lp-feat');return false;">Fonctionnalités</a><a href="#" onclick="bnvLpGo('bnv-lp-risk');return false;">Gestion du risque</a><a href="#" onclick="bnvLpGo('bnv-lp-steps');return false;">Comment ça marche</a></div>
+<div><h4>Compte</h4><a href="#" onclick="bnvLpAuth('login');return false;">Connexion</a><a href="#" onclick="bnvLpAuth('register');return false;">Créer un compte</a></div>
+<div><h4>Informations légales</h4><a href="#" onclick="bnvLegalOpen('cgu');return false;">Conditions d'utilisation</a><a href="#" onclick="bnvLegalOpen('conf');return false;">Confidentialité</a><a href="#" onclick="bnvLegalOpen('mentions');return false;">Mentions légales</a><a href="#" onclick="bnvLegalOpen('risque');return false;">Avertissement sur les risques</a></div>
+</div>
+<p class="bnv-lp-warn"><b>Avertissement sur les risques :</b> le trading de produits financiers (Futures, CFD, Forex, cryptomonnaies) comporte un risque élevé de perte en capital et ne convient pas à tous. Les résultats passés ne préjugent pas des résultats futurs. BNV Journal de Trading est un outil de suivi et d'analyse : il ne fournit aucun conseil en investissement et n'exécute aucun ordre.</p>
+<p class="bnv-lp-copy">© 2026 BNV — Tous droits réservés.</p>
+</div>
+</footer>
 </div>
 <div class="header">
 <div class="logo-block" style="display:flex;align-items:center;gap:0">
@@ -9406,5 +9585,17 @@ fmt(document.body);
 <script id="bnv-mc-sync">/* Calculateur toujours synchronisé : recalcAll est déclarée après le calculateur, on l'enveloppe ici, une fois tout chargé */
 (function(){var o=window.recalcAll;if(typeof o!=='function'||o._mcSync)return;var w=function(){try{return o.apply(this,arguments);}finally{try{if(window.mcSync)window.mcSync();}catch(e){console.warn('[BNV] mcSync :',e);}}};/* synchronise même si recalcAll échoue */w._mcSync=true;window.recalcAll=w;try{if(window.mcSync)window.mcSync();}catch(e){}})();</script>
 <script id="bnv-cover-js">(function(){try{var hi=document.querySelector('.header .logo-circle img'),cl=document.getElementById('bnv-cv-logo');if(hi&&cl){cl.textContent='';cl.appendChild(hi.cloneNode());cl.classList.add('bnv-has-img');}}catch(e){}})();</script>
+<script id="bnv-site-js">/* Site d'accueil : défilement, apparition des sections, accès à la carte de connexion */
+(function(){
+function ls(){return document.getElementById('login-screen');}
+window.bnvLpGo=function(id){var e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});};
+window.bnvLpAuth=function(tab){try{if(typeof switchLoginTab==='function')switchLoginTab(tab);}catch(e){}
+var c=document.getElementById('bnv-lp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'center'});
+setTimeout(function(){var f=document.getElementById(tab==='register'?'reg-username':'login-username');if(f)try{f.focus({preventScroll:true});}catch(e){}},450);};
+try{var hi=document.querySelector('.header .logo-circle img');document.querySelectorAll('.bnv-lp-flogo').forEach(function(cl){if(hi){cl.textContent='';cl.appendChild(hi.cloneNode());cl.classList.add('bnv-has-img');}});}catch(e){}
+var els=document.querySelectorAll('.bnv-lp-rv');
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{root:ls(),threshold:.15});els.forEach(function(e){io.observe(e);});}
+else els.forEach(function(e){e.classList.add('in');});
+})();</script>
 </body>
 </html>
